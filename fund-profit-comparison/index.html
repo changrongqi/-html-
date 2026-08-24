@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>追涨杀跌 vs 耐心持有：胜率与收益率随时间变化</title>
+</head>
+<body>
+<style>
+:root{
+--primary:#F3A04C;--accent:#E58522;--background:#F4F4F6;--panel-bg:#FEFDFC;--card-bg:#fff;
+--tooltip-bg:#454545;--success:#40B43E;--warning:#EBA400;--destructive:#E65C53;
+--destructive-hover:#D14B42;--primary-foreground:#fff;--text-primary:rgba(0,0,0,.8);
+--text-secondary:rgba(0,0,0,.5);--text-tertiary:rgba(0,0,0,.35);--intensity-0:rgba(0,0,0,0);
+--intensity-3:rgba(0,0,0,.03);--intensity-4:rgba(0,0,0,.04);--intensity-6:rgba(0,0,0,.06);
+--intensity-8:rgba(0,0,0,.08);--intensity-12:rgba(0,0,0,.12);--intensity-16:rgba(0,0,0,.16);
+--intensity-20:rgba(0,0,0,.2);--intensity-35:rgba(0,0,0,.35);--intensity-60:rgba(0,0,0,.6);
+--input-shadow:rgba(0,0,0,.08);--radius-sm:8px;--radius-md:10px;--radius-lg:14px;--radius-xl:18px;
+font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+}
+@media (prefers-color-scheme:dark){
+:root{
+--background:#232324;--panel-bg:#332D28;--card-bg:#2E2E2E;--tooltip-bg:#BABABA;
+--primary-foreground:#000;--text-primary:rgba(255,255,255,.8);--text-secondary:rgba(255,255,255,.5);
+--text-tertiary:rgba(255,255,255,.35);--intensity-0:rgba(255,255,255,0);
+--intensity-3:rgba(255,255,255,.03);--intensity-4:rgba(255,255,255,.04);
+--intensity-6:rgba(255,255,255,.06);--intensity-8:rgba(255,255,255,.08);
+--intensity-12:rgba(255,255,255,.12);--intensity-16:rgba(255,255,255,.16);
+--intensity-20:rgba(255,255,255,.2);--intensity-35:rgba(255,255,255,.35);
+--intensity-60:rgba(255,255,255,.6);--input-shadow:rgba(0,0,0,.28)
+}
+}
+*{box-sizing:border-box;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+</style>
+<div style="display:block;width:100%;color:var(--text-primary);">
+  <div style="font-size:18px;font-weight:600;letter-spacing:.5px;line-height:1.35;margin-bottom:6px;">追涨杀跌 vs 耐心持有：胜率与收益率的时间轨迹</div>
+  <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;max-width:660px;margin-bottom:18px;">实线为《公募权益类基金投资者盈利洞察报告》实测数据（权益类基金整体）；虚线为追涨杀跌行为在高波动科技类基金上的方向性示意</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px;">
+    <div style="background:var(--intensity-4);border:1px solid var(--intensity-8);border-radius:12px;padding:14px 16px;min-width:0;">
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;letter-spacing:.2px;">基民平均行为损益</div>
+      <div style="font-size:26px;line-height:1;font-weight:600;letter-spacing:.3px;color:#E65C53;">-7.43%</div>
+    </div>
+    <div style="background:var(--intensity-4);border:1px solid var(--intensity-8);border-radius:12px;padding:14px 16px;min-width:0;">
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;letter-spacing:.2px;">月均交易3次以上盈利占比</div>
+      <div style="font-size:26px;line-height:1;font-weight:600;letter-spacing:.3px;color:#E65C53;">&lt;45%</div>
+    </div>
+    <div style="background:var(--intensity-4);border:1px solid var(--intensity-8);border-radius:12px;padding:14px 16px;min-width:0;">
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;letter-spacing:.2px;">持有超10年盈利占比</div>
+      <div style="font-size:26px;line-height:1;font-weight:600;letter-spacing:.3px;color:#00AA90;">98.41%</div>
+    </div>
+    <div style="background:var(--intensity-4);border:1px solid var(--intensity-8);border-radius:12px;padding:14px 16px;min-width:0;">
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;letter-spacing:.2px;">芯片ETF年化波动率</div>
+      <div style="font-size:26px;line-height:1;font-weight:600;letter-spacing:.3px;color:var(--text-primary);">32–38%</div>
+    </div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:12px;font-size:12px;color:var(--text-secondary);letter-spacing:.2px;">
+    <span style="display:inline-flex;align-items:center;gap:6px;">
+      <span style="width:10px;height:10px;border-radius:3px;background:#00AA90;"></span>耐心持有（报告实测）
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:6px;">
+      <span style="width:10px;height:10px;border-radius:3px;background:#E65C53;"></span>追涨杀跌（方向性示意）
+    </span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;letter-spacing:.3px;margin:16px 0 10px;"><span style="width:3px;height:14px;border-radius:2px;background:var(--primary);"></span>盈利人数占比随持有时间变化（%）</div>
+  <div style="position:relative;width:100%;height:260px;">
+    <canvas id="chartProb"></canvas>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;letter-spacing:.3px;margin:22px 0 10px;"><span style="width:3px;height:14px;border-radius:2px;background:var(--primary);"></span>平均累计收益率随持有时间变化（%）</div>
+  <div style="position:relative;width:100%;height:260px;">
+    <canvas id="chartRet"></canvas>
+  </div>
+  <div style="font-size:11px;color:var(--text-tertiary);line-height:1.7;margin-top:16px;padding-top:12px;border-top:1px solid var(--intensity-8);">数据来源：《公募权益类基金投资者盈利洞察报告》（景顺长城、富国、交银施罗德、中国证券报，2021）；盈米基金2026年全市场测算。追涨杀跌曲线为基于行为损益研究结论的示意推演，非精确回测结果，仅供理解趋势方向。</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+function initCharts(){
+  var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var gridC = isDark ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.08)';
+  var tickC = isDark ? 'rgba(255,255,255,.5)' : 'rgba(0,0,0,.5)';
+  var labels = ['<3个月','3–6个月','6–12个月','1–3年','3–5年','5–10年','>10年'];
+  function mkOpts(suffix){
+    return {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:function(c){return c.dataset.label+'：'+c.parsed.y+suffix;}}}
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{color:tickC,font:{size:11}}},
+        y:{grid:{color:gridC},ticks:{color:tickC,font:{size:11},callback:function(v){return v+suffix;}}}
+      }
+    };
+  }
+  new Chart(document.getElementById('chartProb'),{
+    type:'line',
+    data:{labels:labels,datasets:[
+      {label:'耐心持有（实测）',data:[39.1,63.7,72.5,73.8,65.0,73.8,98.4],borderColor:'#00AA90',backgroundColor:'#00AA90',borderWidth:2,pointRadius:3,tension:.3},
+      {label:'追涨杀跌（示意）',data:[40,37,33,29,26,24,22],borderColor:'#E65C53',backgroundColor:'#E65C53',borderWidth:2,pointRadius:3,tension:.3,borderDash:[6,4]}
+    ]},
+    options:mkOpts('%')
+  });
+  new Chart(document.getElementById('chartRet'),{
+    type:'line',
+    data:{labels:labels,datasets:[
+      {label:'耐心持有（实测）',data:[-1.47,5.75,10.94,18.93,21.96,39.70,117.38],borderColor:'#00AA90',backgroundColor:'#00AA90',borderWidth:2,pointRadius:3,tension:.3},
+      {label:'追涨杀跌（示意）',data:[-2.5,0.5,2.5,4.5,6,9,13],borderColor:'#E65C53',backgroundColor:'#E65C53',borderWidth:2,pointRadius:3,tension:.3,borderDash:[6,4]}
+    ]},
+    options:mkOpts('%')
+  });
+}
+if(window.Chart){initCharts();}
+</script>
+</body>
+</html>
