@@ -143,7 +143,7 @@ footer{margin-top:56px;padding-top:24px;border-top:1px solid var(--line)}
     <p class="overline">Portfolio · 静态项目集</p>
     <h1>我的<em>前端项目</em></h1>
     <p class="sub">用 <b>HTML / CSS / JS</b> 做的作品合集，托管在 GitHub Pages。<br />此页会自动读取仓库里的项目文件夹，<b>新增项目后无需手动更新</b>。</p>
-    <div class="meta">
+    <div style="display:flex;align-items:flex-start;gap:8px;font-size:12px;line-height:1.6;margin:0 0 24px;padding:9px 12px;border-radius:10px;border:1px solid rgba(194,64,47,.3);background:rgba(194,64,47,.08);color:var(--ink-2);"><span style="flex:none;font-weight:600;color:var(--accent);">提示</span><span>请使用最新版 Chromium 内核浏览器（如新版 Chrome、Edge）访问本仓库；旧内核可能出现 CSS 兼容性问题（滑块样式、图表布局错位等）。</span></div><div class="meta">
       <span class="count" id="count">正在读取项目数量…</span>
       <a class="repo" href="https://github.com/changrongqi/-html-" target="_blank" rel="noopener">GitHub 仓库 ↗</a>
     </div>
@@ -163,7 +163,7 @@ footer{margin-top:56px;padding-top:24px;border-top:1px solid var(--line)}
 (function () {
   var GH_REPO = 'changrongqi/-html-';
   // 兜底列表：仅当 GitHub API 不可用时展示（正常情况由接口实时生成）
-  var FALLBACK = ['fund-profit-comparison'];
+  var FALLBACK = ['fund-profit-comparison','compound-vs-simple-interest','disciplined-dca-monte-carlo'];
 
   function pretty(name) {
     return name.replace(/[-_]+/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
