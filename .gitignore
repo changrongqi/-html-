@@ -144,3 +144,6 @@ vite.config.ts.timestamp-*
 
 # Local helper script (local only)
 add-project.ps1
+
+# Local handoff context (local only)
+CONTEXT.md
