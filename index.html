@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>前端项目集 · changrongqi</title>
+<style>
+:root{
+  --bg:#F5F2EC;
+  --bg-2:#EFEAE1;
+  --ink:#1C1A16;
+  --ink-2:rgba(28,26,22,.62);
+  --ink-3:rgba(28,26,22,.38);
+  --accent:#C2402F;
+  --line:rgba(28,26,22,.12);
+  --serif:"Songti SC","STSong","Noto Serif CJK SC","SimSun",serif;
+  --sans:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#161512;
+    --bg-2:#1F1D19;
+    --ink:#EDEAE2;
+    --ink-2:rgba(237,234,226,.64);
+    --ink-3:rgba(237,234,226,.4);
+    --accent:#E5684F;
+    --line:rgba(237,234,226,.14);
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans);
+  color:var(--ink);
+  background:var(--bg);
+  background-image:
+    radial-gradient(1100px 520px at 88% -8%, rgba(194,64,47,.08), transparent 62%),
+    radial-gradient(900px 500px at -12% 108%, rgba(194,64,47,.05), transparent 55%);
+  min-height:100vh;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+/* 轻微纸张颗粒质感（纯 CSS，无外部资源） */
+body::after{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+.wrap{max-width:1060px;margin:0 auto;padding:72px 28px 96px;position:relative;z-index:1}
+.overline{
+  font-family:var(--mono);font-size:12px;letter-spacing:.28em;color:var(--accent);
+  text-transform:uppercase;margin-bottom:26px;
+}
+h1{
+  font-family:var(--serif);font-weight:700;
+  font-size:clamp(40px,7.5vw,72px);
+  line-height:1.08;letter-spacing:.02em;margin-bottom:22px;
+}
+h1 em{
+  font-style:normal;color:var(--accent);
+  border-bottom:4px solid var(--accent);
+  padding-bottom:2px;
+}
+.sub{
+  font-size:15px;color:var(--ink-2);max-width:620px;margin-bottom:34px;
+}
+.sub b{color:var(--ink);font-weight:600}
+.meta{
+  display:flex;flex-wrap:wrap;align-items:center;gap:18px;
+  padding-bottom:26px;border-bottom:1px solid var(--line);margin-bottom:14px;
+}
+.count{
+  font-family:var(--serif);font-size:17px;color:var(--ink);
+}
+.count b{color:var(--accent);font-size:24px;font-weight:700;margin:0 2px}
+.repo{
+  margin-left:auto;font-size:13px;color:var(--ink-2);text-decoration:none;
+  border:1px solid var(--line);border-radius:999px;padding:7px 16px;
+  transition:color .2s,border-color .2s,transform .2s;
+}
+.repo:hover{color:var(--accent);border-color:var(--accent);transform:translateY(-1px)}
+/* 项目列表 */
+.list{margin-top:18px}
+.card{
+  display:flex;align-items:center;gap:20px;
+  padding:24px 6px;border-bottom:1px solid var(--line);
+  text-decoration:none;color:inherit;position:relative;
+  animation:rise .6s cubic-bezier(.2,.7,.2,1) both;
+  transition:background .25s,transform .25s;
+}
+.card:hover{background:var(--bg-2);transform:translateX(6px)}
+.idx{
+  font-family:var(--serif);font-style:italic;font-size:26px;color:var(--accent);
+  min-width:56px;
+}
+.info{min-width:0}
+.name{
+  display:block;font-family:var(--serif);font-weight:700;font-size:24px;
+  letter-spacing:.01em;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.path{
+  display:block;font-family:var(--mono);font-size:12px;color:var(--ink-3);
+}
+.go{
+  margin-left:auto;display:inline-flex;align-items:center;gap:8px;
+  font-size:14px;color:var(--ink-2);white-space:nowrap;
+}
+.go i{font-style:normal;transition:transform .25s}
+.card:hover .go{color:var(--accent)}
+.card:hover .go i{transform:translateX(4px)}
+.state{
+  padding:60px 6px;color:var(--ink-3);font-size:14px;text-align:center;
+}
+@keyframes rise{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+footer{margin-top:56px;padding-top:24px;border-top:1px solid var(--line)}
+.note{font-size:13px;color:var(--ink-2);margin-bottom:10px;max-width:680px}
+.note code{
+  font-family:var(--mono);font-size:12px;color:var(--accent);
+  background:var(--bg-2);padding:1px 6px;border-radius:5px;
+}
+.cr{font-size:12px;color:var(--ink-3)}
+@media (max-width:600px){
+  .wrap{padding:48px 20px 72px}
+  .name{font-size:20px}
+  .idx{font-size:20px;min-width:40px}
+  .repo{margin-left:0}
+  .go{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .card{animation:none}
+  .card:hover{transform:none}
+  .card:hover .go i{transform:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="overline">Portfolio · 静态项目集</p>
+    <h1>我的<em>前端项目</em></h1>
+    <p class="sub">用 <b>HTML / CSS / JS</b> 做的作品合集，托管在 GitHub Pages。<br />此页会自动读取仓库里的项目文件夹，<b>新增项目后无需手动更新</b>。</p>
+    <div class="meta">
+      <span class="count" id="count">正在读取项目数量…</span>
+      <a class="repo" href="https://github.com/changrongqi/-html-" target="_blank" rel="noopener">GitHub 仓库 ↗</a>
+    </div>
+  </header>
+
+  <main class="list" id="list">
+    <div class="state" id="state">正在从 GitHub 读取项目列表…</div>
+  </main>
+
+  <footer>
+    <p class="note">💡 新增项目：把项目文件夹（内含 <code>index.html</code>）推送到本仓库即可，新入口会自动出现在上方列表里。</p>
+    <p class="cr">© 2026 changrongqi · MIT License</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var GH_REPO = 'changrongqi/-html-';
+  // 兜底列表：仅当 GitHub API 不可用时展示（正常情况由接口实时生成）
+  var FALLBACK = ['fund-profit-comparison'];
+
+  function pretty(name) {
+    return name.replace(/[-_]+/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+
+  function render(folders, fallback) {
+    var list = document.getElementById('list');
+    list.innerHTML = '';
+    if (!folders.length) {
+      var empty = document.createElement('div');
+      empty.className = 'state';
+      empty.textContent = fallback ? '（接口不可用，且暂无兜底项目）' : '仓库里还没有项目，快去添加第一个吧';
+      list.appendChild(empty);
+      return;
+    }
+    folders.forEach(function (f, i) {
+      var a = document.createElement('a');
+      a.className = 'card';
+      a.href = './' + f + '/';
+      a.style.animationDelay = (i * 0.06) + 's';
+      a.innerHTML =
+        '<span class="idx">' + String(i + 1).padStart(2, '0') + '</span>' +
+        '<span class="info">' +
+          '<span class="name">' + pretty(f) + '</span>' +
+          '<span class="path">' + f + '/</span>' +
+        '</span>' +
+        '<span class="go">打开项目 <i>→</i></span>';
+      list.appendChild(a);
+    });
+  }
+
+  function setCount(n) {
+    document.getElementById('count').innerHTML = '已收录 <b>' + n + '</b> 个项目';
+  }
+
+  function load() {
+    fetch('https://api.github.com/repos/' + GH_REPO + '/contents/')
+      .then(function (res) {
+        if (!res.ok) throw new Error('api ' + res.status);
+        return res.json();
+      })
+      .then(function (items) {
+        var dirs = items.filter(function (i) { return i.type === 'dir'; })
+          .map(function (i) { return i.name; })
+          .sort(function (a, b) { return a.localeCompare(b, 'zh-CN'); });
+        render(dirs, false);
+        setCount(dirs.length);
+      })
+      .catch(function () {
+        render(FALLBACK, true);
+        setCount(FALLBACK.length);
+        document.getElementById('state').textContent = '接口暂不可用，以下为最近的项目：';
+      });
+  }
+
+  if (window.fetch) { load(); } else { render(FALLBACK, true); setCount(FALLBACK.length); }
+})();
+</script>
+</body>
+</html>
