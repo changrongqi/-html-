@@ -1,0 +1,467 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>纪律化定投策略蒙特卡洛测算器 V2.1</title>
+</head>
+<body>
+<style>
+:root{
+--primary:#F3A04C;--accent:#E58522;--background:#F4F4F6;--panel-bg:#FEFDFC;--card-bg:#fff;
+--success:#40B43E;--warning:#EBA400;--destructive:#E65C53;
+--primary-foreground:#fff;--text-primary:rgba(0,0,0,.8);--text-secondary:rgba(0,0,0,.5);
+--text-tertiary:rgba(0,0,0,.35);--intensity-4:rgba(0,0,0,.04);--intensity-6:rgba(0,0,0,.06);
+--intensity-8:rgba(0,0,0,.08);--intensity-12:rgba(0,0,0,.12);
+font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+}
+@media (prefers-color-scheme:dark){
+:root{
+--card-bg:#2E2E2E;--primary-foreground:#000;--text-primary:rgba(255,255,255,.8);
+--text-secondary:rgba(255,255,255,.5);--text-tertiary:rgba(255,255,255,.35);
+--intensity-4:rgba(255,255,255,.04);--intensity-6:rgba(255,255,255,.06);
+--intensity-8:rgba(255,255,255,.08);--intensity-12:rgba(255,255,255,.12)
+}
+}
+*{box-sizing:border-box;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+input[type=range]{accent-color:#F3A04C}
+.sec-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:.3px;margin:0 0 8px;color:var(--text-primary)}
+.sec-title::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--primary);flex:none}
+</style>
+<div style="display:block;width:100%;color:var(--text-primary);">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
+    <div style="font-size:18px;font-weight:600;letter-spacing:.5px;line-height:1.35;">纪律化定投策略测算器 V2.1</div>
+    <span id="wmBadge" style="display:inline-flex;align-items:center;border:.5px solid color-mix(in srgb,#EBA400 40%,transparent);border-radius:999px;background:color-mix(in srgb,#EBA400 12%,transparent);color:#EBA400;padding:4px 10px;font-size:11px;font-weight:500;">假设水印加载中</span>
+  </div>
+  <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:16px;">V2.1：市场路径库一次生成、全部参数复用（公共随机数法，对照更干净），重算分片执行、界面不再冻结。拖动滑块实时刷新读数，松开后约 0.2–0.6 秒完成全量重算。</div>
+
+  <div style="background:var(--intensity-4);border-radius:14px;padding:14px 16px;margin-bottom:16px;">
+    <div style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px;">您确知的参数</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px 20px;">
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px;"><span>每月基础弹药</span><span id="vMonthly" style="font-weight:500;color:var(--text-primary);"></span></div>
+        <input id="inMonthly" type="range" min="2000" max="20000" step="500" value="10000" style="width:100%;">
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px;"><span>投资年限（≥10年）</span><span id="vYears" style="font-weight:500;color:var(--text-primary);"></span></div>
+        <input id="inYears" type="range" min="10" max="15" step="1" value="15" style="width:100%;">
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px;"><span>年综合费率（目标&lt;1%）</span><span id="vFee" style="font-weight:500;color:var(--text-primary);"></span></div>
+        <input id="inFee" type="range" min="0.2" max="1.5" step="0.05" value="0.8" style="width:100%;">
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px;"><span>通胀率假设</span><span id="vInfl" style="font-weight:500;color:var(--text-primary);"></span></div>
+        <input id="inInfl" type="range" min="1.5" max="3.5" step="0.5" value="2.5" style="width:100%;">
+      </div>
+    </div>
+    <div style="font-size:12px;font-weight:500;color:var(--text-secondary);margin:14px 0 10px;">资产配比（引擎自动归一化，科技仓上限10%为硬约束）</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px 20px;">
+      <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px;"><span>宽基指数</span><span id="vW0" style="font-weight:500;color:var(--text-primary);"></span></div><input id="inW0" type="range" min="0" max="70" step="5" value="40" style="width:100%;"></div>
+      <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px;"><span>主动偏股</span><span id="vW1" style="font-weight:500;color:var(--text-primary);"></span></div><input id="inW1" type="range" min="0" max="40" step="5" value="15" style="width:100%;"></div>
+      <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px;"><span>科技卫星（≤10）</span><span id="vW2" style="font-weight:500;color:var(--text-primary);"></span></div><input id="inW2" type="range" min="0" max="10" step="1" value="10" style="width:100%;"></div>
+      <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px;"><span>偏债基金</span><span id="vW3" style="font-weight:500;color:var(--text-primary);"></span></div><input id="inW3" type="range" min="0" max="70" step="5" value="25" style="width:100%;"></div>
+      <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px;"><span>黄金ETF</span><span id="vW4" style="font-weight:500;color:var(--text-primary);"></span></div><input id="inW4" type="range" min="0" max="40" step="5" value="10" style="width:100%;"></div>
+    </div>
+    <div id="chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;"></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;">
+      <label style="font-size:12px;color:var(--text-secondary);">压力情景</label>
+      <select id="inScen" style="height:32px;border:.5px solid var(--intensity-12);border-radius:8px;background:var(--intensity-4);color:var(--text-primary);padding:0 10px;font-size:12px;outline:none;">
+        <option value="0">无（基准）</option>
+        <option value="1">第3年遭遇2008式崩盘（权益12个月−60%）</option>
+        <option value="2">第5年起三年横盘失效（权益≈0%）</option>
+      </select>
+      <button id="btnResim" style="height:32px;padding:0 14px;border:0;border-radius:8px;background:var(--primary);color:var(--primary-foreground);font-size:12px;font-weight:500;">重新随机模拟</button>
+      <span id="busy" style="font-size:11px;color:#E58522;"></span>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:8px;">
+    <div style="background:var(--intensity-4);border-radius:10px;padding:12px 14px;min-width:0;"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">合成期望年化（费前/费后）</div><div id="kMu" style="font-size:19px;line-height:1.1;font-weight:500;color:var(--text-primary);">—</div></div>
+    <div style="background:var(--intensity-4);border-radius:10px;padding:12px 14px;min-width:0;"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">组合波动率（协方差合成）</div><div id="kSig" style="font-size:19px;line-height:1.1;font-weight:500;color:var(--text-primary);">—</div></div>
+    <div style="background:var(--intensity-4);border-radius:10px;padding:12px 14px;min-width:0;"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">分散化红利</div><div id="kDiv" style="font-size:19px;line-height:1.1;font-weight:500;color:#00AA90;">—</div></div>
+    <div style="background:var(--intensity-4);border-radius:10px;padding:12px 14px;min-width:0;"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">费率对终值的拖累</div><div id="kDrag" style="font-size:19px;line-height:1.1;font-weight:500;color:#E65C53;">—</div></div>
+  </div>
+  <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:20px;line-height:1.5;">期望收益与波动率由资产配比与内置历史参考假设（宽基8.5%/22%、主动9%/23%、科技10%/35%、偏债3.5%/4%、黄金5%/15%，权益间相关0.8–0.9）自动合成，不可直接调节——这是对"输入层缺陷"的修复。</div>
+
+  <div class="sec-title">财富路径扇形图：P10–P90 分位带（含弹药池）</div>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:8px;font-size:12px;color:var(--text-secondary);">
+    <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:#F3A04C;"></span>策略开启 P50</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:rgba(243,160,76,.35);"></span>策略 P10–P90 区间</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:#58B2DC;"></span>纯定投 P50（对照）</span>
+  </div>
+  <div style="position:relative;width:100%;height:250px;margin-bottom:20px;"><canvas id="chFan"></canvas></div>
+
+  <div class="sec-title">期末终值分布（左红=P10以下坏结局，右绿=P90以上好结局）</div>
+  <div style="position:relative;width:100%;height:190px;margin-bottom:10px;"><canvas id="chHist"></canvas></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px;">
+    <div style="background:var(--intensity-4);border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">P10（坏结局边界）</div><div id="kP10" style="font-size:19px;font-weight:500;color:#E65C53;">—</div></div>
+    <div style="background:var(--intensity-4);border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">P50（中位数·名义）</div><div id="kP50" style="font-size:19px;font-weight:500;color:#F3A04C;">—</div></div>
+    <div style="background:var(--intensity-4);border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">P50 实际购买力</div><div id="kP50R" style="font-size:19px;font-weight:500;color:var(--text-primary);">—</div></div>
+    <div style="background:var(--intensity-4);border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">P90（好结局边界）</div><div id="kP90" style="font-size:19px;font-weight:500;color:#00AA90;">—</div></div>
+  </div>
+
+  <div class="sec-title">盈利概率：三级阈值分别报告</div>
+  <div id="probBars" style="margin-bottom:20px;"></div>
+
+  <div class="sec-title">路径持有体验（决定能否扛住的关键量）</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px;">
+    <div style="background:var(--intensity-4);border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">最大回撤·中位</div><div id="kMdd" style="font-size:19px;font-weight:500;color:var(--text-primary);">—</div></div>
+    <div style="background:var(--intensity-4);border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">最大回撤·最差10%</div><div id="kMddW" style="font-size:19px;font-weight:500;color:#E65C53;">—</div></div>
+    <div style="background:var(--intensity-4);border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">最长水下年限·中位</div><div id="kUw" style="font-size:19px;font-weight:500;color:var(--text-primary);">—</div></div>
+    <div style="background:var(--intensity-4);border-radius:10px;padding:12px 14px;"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:5px;">第5年末仍浮亏概率</div><div id="kY5" style="font-size:19px;font-weight:500;color:#EBA400;">—</div></div>
+  </div>
+
+  <div class="sec-title">策略边际价值对照：策略开启 vs 纯定投（公共随机数，同路径对比）</div>
+  <div style="position:relative;width:100%;height:200px;margin-bottom:6px;"><canvas id="chCmp"></canvas></div>
+  <div id="cmpNote" style="font-size:11px;color:var(--text-secondary);line-height:1.6;margin-bottom:20px;"></div>
+
+  <div class="sec-title">龙卷风敏感性：假设扰动对实际购买力中位数的影响（万元，按影响跨度排序）</div>
+  <div style="position:relative;width:100%;height:200px;margin-bottom:6px;"><canvas id="chTor"></canvas></div>
+  <div style="font-size:11px;color:var(--text-tertiary);line-height:1.5;margin-bottom:20px;">收益率假设主导输出方差——这正是拒绝给出单点预测的原因。任何结论都应引用区间而非中位点值。</div>
+
+  <div class="sec-title">行为失效成本（相对纪律执行的终值缺口，同路径对比）</div>
+  <div id="behavBars" style="margin-bottom:20px;"></div>
+
+  <div style="font-size:11px;color:var(--text-tertiary);line-height:1.7;border-top:.5px solid var(--intensity-8);padding-top:12px;">已知局限（诚实披露）：1) 未内置真实历史月度序列的区块自助法回放引擎（无外部数据接口），当前为参数化蒙特卡洛；2) 估值分位为"近12个月收益→逻辑斯蒂映射"的内生代理，非真实 PE-TTM 分位；3) 各资产统一按同一综合费率扣减；4) 敏感性中的"年限±3年"复用同一路径库的前段月份，属已知近似；5) 策略与纯定投的弹药池差异意味着二者投入资本不同，绝对终值对比请以财富倍数与分布形状为准。本工具仅为教育性测算，全部数字基于假设、不构成投资建议。</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(function(){
+var ASSETS=[
+ {name:'宽基指数',mu:0.085,sig:0.22,color:'#F3A04C'},
+ {name:'主动偏股',mu:0.090,sig:0.23,color:'#E98B2A'},
+ {name:'科技卫星',mu:0.100,sig:0.35,color:'#F17C67'},
+ {name:'偏债基金',mu:0.035,sig:0.04,color:'#58B2DC'},
+ {name:'黄金ETF',mu:0.050,sig:0.15,color:'#EBA400'}
+];
+var CORR=[[1,.9,.8,0,.05],[.9,1,.8,0,.05],[.8,.8,1,0,.05],[0,0,0,1,.1],[.05,.05,0,.1,1]];
+function chol(A){var n=A.length,L=[];for(var i=0;i<n;i++){L.push(new Float64Array(n));}
+ for(i=0;i<n;i++)for(var j=0;j<=i;j++){var s=A[i][j];for(var k=0;k<j;k++)s-=L[i][k]*L[j][k];
+ if(i===j){L[i][j]=Math.sqrt(Math.max(s,1e-10));}else{L[i][j]=s/L[j][j];}}return L;}
+var L=chol(CORR);
+var MA=ASSETS.map(function(a){return a.mu/12;});
+var SA=ASSETS.map(function(a){return a.sig/Math.sqrt(12);});
+var isDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+var gridC=isDark?'rgba(255,255,255,.12)':'rgba(0,0,0,.08)';
+var tickC=isDark?'rgba(255,255,255,.5)':'rgba(0,0,0,.5)';
+var _sp=null;
+function rn(){if(_sp!==null){var v=_sp;_sp=null;return v;}var u=0;while(u===0)u=Math.random();var r=Math.sqrt(-2*Math.log(u)),th=6.283185307179586*Math.random();_sp=r*Math.sin(th);return r*Math.cos(th);}
+function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+function pct(arr,q){var i=(arr.length-1)*q,lo=Math.floor(i),hi=Math.ceil(i);return arr[lo]+(arr[hi]-arr[lo])*(i-lo);}
+function sorted(a){return Array.from(a).sort(function(x,y){return x-y;});}
+function fmtW(v){return (v/10000).toFixed(1)+'万';}
+function fmtP(v){return (v*100).toFixed(1)+'%';}
+function tick(){return new Promise(function(r){setTimeout(r,0);});}
+function nop(){}
+
+function inEl(i){return document.getElementById('inW'+i);}
+function getInputs(){
+ var raw=[+inEl(0).value,+inEl(1).value,+inEl(2).value,+inEl(3).value,+inEl(4).value];
+ var sum=raw.reduce(function(a,b){return a+b;},0);
+ var w=sum>0?raw.map(function(v){return v/sum;}):[.2,.2,.2,.2,.2];
+ return {monthly:+document.getElementById('inMonthly').value,
+  years:+document.getElementById('inYears').value,
+  fee:+document.getElementById('inFee').value/100,
+  infl:+document.getElementById('inInfl').value/100,
+  w:w,scen:+document.getElementById('inScen').value};
+}
+function portStats(w,fee){
+ var mu=0,v=0,wavg=0,i,j;
+ for(i=0;i<5;i++){mu+=w[i]*ASSETS[i].mu;wavg+=w[i]*ASSETS[i].sig;}
+ for(i=0;i<5;i++)for(j=0;j<5;j++)v+=w[i]*w[j]*CORR[i][j]*ASSETS[i].sig*ASSETS[j].sig;
+ return {mu:mu,sig:Math.sqrt(v),div:wavg-Math.sqrt(v),muNet:mu-fee};
+}
+
+var CUBE=null,CUBE_N=1200,CUBE_T=216;
+function buildCube(prog){
+ return new Promise(function(resolve){
+  var d=new Float64Array(CUBE_N*CUBE_T*5),p=0;
+  function chunk(){
+   var end=Math.min(p+150,CUBE_N);
+   for(;p<end;p++){
+    var off0=p*CUBE_T*5,regime=1;
+    for(var t=0;t<CUBE_T;t++){
+     var z0=rn(),z1=rn(),z2=rn(),z3=rn(),z4=rn();
+     var x0=L[0][0]*z0;
+     var x1=L[1][0]*z0+L[1][1]*z1;
+     var x2=L[2][0]*z0+L[2][1]*z1+L[2][2]*z2;
+     var x3=L[3][3]*z3;
+     var x4=L[4][0]*z0+L[4][1]*z1+L[4][3]*z3+L[4][4]*z4;
+     var q=0,g;for(var k=0;k<5;k++){g=rn();q+=g*g;}
+     var ts=Math.sqrt(5/q);
+     if(regime===1){if(Math.random()<0.06)regime=2;}else if(Math.random()<0.25)regime=1;
+     var rm=regime===2?1.7:1,rbm=regime===2?1.2:1;
+     var b=off0+t*5;
+     d[b]=clamp(MA[0]+SA[0]*rm*ts*x0,-.9,3);
+     d[b+1]=clamp(MA[1]+SA[1]*rm*ts*x1,-.9,3);
+     d[b+2]=clamp(MA[2]+SA[2]*rm*ts*x2,-.9,3);
+     d[b+3]=clamp(MA[3]+SA[3]*rbm*ts*x3,-.5,1);
+     d[b+4]=clamp(MA[4]+SA[4]*rbm*ts*x4,-.7,1.5);
+    }
+   }
+   prog('生成市场路径库 '+Math.round(p/CUBE_N*100)+'%');
+   if(p<CUBE_N){setTimeout(chunk,0);}else{CUBE=d;resolve();}
+  }
+  chunk();
+ });
+}
+
+function runVariant(o,prog,tag){
+ return new Promise(function(resolve){
+  var N=o.N,Y=o.years,T=Y*12,d=CUBE;
+  var term=new Float64Array(N),mdd=new Float64Array(N),uw=new Float64Array(N);
+  var invA=new Float64Array(N),invI=new Float64Array(N),invB=new Float64Array(N);
+  var yearly=o.keep?new Float64Array(N*(Y+1)):null;
+  var below=o.keep?new Float64Array(Y+1):null;
+  var feeM=o.fee/12,inflM=o.infl/12,rbm2=(0.035-0.002)/12;
+  var vs=o.volShift||1,ms=o.muShift||0,w=o.w,scen=o.scen||0;
+  var seed=o.on?6*o.monthly:0;
+  var p=0;
+  function chunk(){
+   var end=Math.min(p+200,N);
+   for(;p<end;p++){
+    var b0=0,b1=0,b2=0,b3=0,b4=0,pool=seed,inv=seed,ii=seed,ib=seed;
+    var prod=1,cnt=0,ri=0,ring=new Float64Array(12);
+    var peak=Math.max(seed,1),ddMin=0,uwC=0,uwM=0;
+    var stopUsed=false,stopLeft=0,panicUsed=false,panicking=false,panicLeft=0,reenter=false;
+    var pb=p*CUBE_T*5;
+    for(var t=1;t<=T;t++){
+     var b=pb+(t-1)*5;
+     var r0=d[b],r1=d[b+1],r2=d[b+2],r3=d[b+3],r4=d[b+4];
+     if(vs!==1){r0=MA[0]+(r0-MA[0])*vs;r1=MA[1]+(r1-MA[1])*vs;r2=MA[2]+(r2-MA[2])*vs;r3=MA[3]+(r3-MA[3])*vs;r4=MA[4]+(r4-MA[4])*vs;}
+     if(ms!==0){var dm=ms/12;r0+=dm;r1+=dm;r2+=dm;}
+     if(scen===1&&t>=36&&t<48){r0=-0.075;r1=-0.075;r2=-0.075;}
+     else if(scen===2&&t>=48&&t<84){r0=0.0005;r1=0.0005;r2=0.0005;}
+     var sEq=t<=T-24?1:1-0.85*(t-(T-24))/24;
+     var eqS=w[0]+w[1]+w[2];
+     var wt0=w[0]*sEq,wt1=w[1]*sEq,wt2=w[2]*sEq,wt3=w[3]+eqS*(1-sEq),wt4=w[4];
+     var rEq=(w[0]*r0+w[1]*r1+w[2]*r2)/Math.max(eqS,1e-9);
+     var trailing=cnt===0?0:(cnt<12?Math.pow(prod,12/cnt)-1:prod-1);
+     var pv=1/(1+Math.exp((trailing-0.085)/0.20));
+     var mult=o.on?(pv<.2?2:pv<.4?1.5:pv<.7?1:pv<.85?.5:0):1;
+     var c=o.monthly*mult;
+     if(o.on&&mult===0)pool+=o.monthly;
+     if(o.on&&rEq<=-0.03&&pool>0){var ex=Math.min(0.5*o.monthly,pool);c+=ex;pool-=ex;}
+     if(o.behav===1){if(!stopUsed&&trailing<-0.10){stopUsed=true;stopLeft=12;}if(stopLeft>0){c=0;stopLeft--;}}
+     if(o.behav===2&&!panicking&&!panicUsed){var tb2=b0+b1+b2+b3+b4+pool;var dd0=tb2/peak-1;
+      if(dd0<=-0.30){pool=tb2;b0=b1=b2=b3=b4=0;panicUsed=true;panicking=true;panicLeft=12;}}
+     if(panicking){pool+=c;c=0;panicLeft--;if(panicLeft===0){panicking=false;reenter=true;}}
+     inv+=c;ii=ii*(1+inflM)+c;ib=ib*(1+rbm2)+c;
+     var f=1-feeM;
+     b0=b0*(1+r0)*f+c*wt0;b1=b1*(1+r1)*f+c*wt1;b2=b2*(1+r2)*f+c*wt2;b3=b3*(1+r3)*f+c*wt3;b4=b4*(1+r4)*f+c*wt4;
+     pool*=1+0.02/12;
+     if(reenter){var Sp=pool;b0+=Sp*wt0;b1+=Sp*wt1;b2+=Sp*wt2;b3+=Sp*wt3;b4+=Sp*wt4;pool=0;reenter=false;}
+     if(cnt<12){ring[ri]=rEq;prod*=1+rEq;cnt++;}else{prod/=1+ring[ri];ring[ri]=rEq;prod*=1+rEq;}
+     ri=(ri+1)%12;
+     var total=b0+b1+b2+b3+b4+pool;
+     if(total>peak){peak=total;uwC=0;}else{uwC++;var dd=total/peak-1;if(dd<ddMin)ddMin=dd;}
+     if(uwC>uwM)uwM=uwC;
+     var S=b0+b1+b2+b3+b4;
+     if(o.on&&t%12===0&&t<T&&S>0){b0=S*wt0;b1=S*wt1;b2=S*wt2;b3=S*wt3;b4=S*wt4;}
+     if(t>T-24&&t%3===0&&S>0){b0=S*wt0;b1=S*wt1;b2=S*wt2;b3=S*wt3;b4=S*wt4;}
+     if(o.keep&&t%12===0){var y=t/12;yearly[p*(Y+1)+y]=total;if(total<inv)below[y]++;}
+    }
+    if(o.keep){yearly[p*(Y+1)]=seed;}
+    term[p]=total;invA[p]=inv;invI[p]=ii;invB[p]=ib;mdd[p]=ddMin;uw[p]=uwM/12;
+   }
+   if(tag){prog(tag+' '+Math.round(p/N*100)+'%');}
+   if(p<N){setTimeout(chunk,0);}
+   else{resolve({term:term,invA:invA,invI:invI,invB:invB,mdd:mdd,uw:uw,yearly:yearly,below:below,N:N,Y:Y});}
+  }
+  chunk();
+ });
+}
+
+var charts={};
+function yLabels(Y){var a=['起点'];for(var i=1;i<=Y;i++)a.push(i+'年');return a;}
+function fanPct(res,q){var Y=res.Y,out=[],y;for(y=0;y<=Y;y++){var col=[];for(var p=0;p<res.N;p++)col.push(res.yearly[p*(Y+1)+y]);out.push(pct(col.sort(function(a,b){return a-b;}),q));}return out;}
+
+var chipEls=[];
+function buildChips(){
+ var c=document.getElementById('chips');c.innerHTML='';chipEls=[];
+ for(var i=0;i<5;i++){
+  var sp=document.createElement('span');
+  sp.style.cssText='display:inline-flex;align-items:center;gap:5px;border:.5px solid var(--intensity-8);border-radius:999px;background:var(--intensity-4);padding:3px 9px;font-size:11px;color:var(--text-secondary);';
+  var dot=document.createElement('span');dot.style.cssText='width:8px;height:8px;border-radius:2px;background:'+ASSETS[i].color+';';
+  var tx=document.createElement('span');
+  sp.appendChild(dot);sp.appendChild(tx);c.appendChild(sp);chipEls.push(tx);
+ }
+}
+function updateLabels(){
+ var inp=getInputs();
+ document.getElementById('vMonthly').textContent=inp.monthly+'元';
+ document.getElementById('vYears').textContent=inp.years+'年';
+ var feeEl=document.getElementById('vFee');
+ feeEl.textContent=(inp.fee*100).toFixed(2)+'%';
+ feeEl.style.color=inp.fee>0.01?'#E65C53':'var(--text-primary)';
+ document.getElementById('vInfl').textContent=(inp.infl*100).toFixed(1)+'%';
+ for(var i=0;i<5;i++){
+  document.getElementById('vW'+i).textContent=inEl(i).value;
+  if(chipEls[i])chipEls[i].textContent=ASSETS[i].name+' '+(inp.w[i]*100).toFixed(1)+'%';
+ }
+ var st=portStats(inp.w,inp.fee);
+ document.getElementById('kMu').textContent=fmtP(st.mu)+' / '+fmtP(st.muNet);
+ document.getElementById('kSig').textContent=fmtP(st.sig);
+ document.getElementById('kDiv').textContent='-'+fmtP(st.div);
+ var drag=st.mu>0?(1-Math.pow((1+st.mu-inp.fee)/(1+st.mu),inp.years))*100:0;
+ document.getElementById('kDrag').textContent='≈ -'+drag.toFixed(1)+'%';
+ document.getElementById('wmBadge').textContent='假设：费后年化≈'+fmtP(st.muNet)+' · σ≈'+fmtP(st.sig)+' · 通胀'+(inp.infl*100).toFixed(1)+'%';
+}
+
+function renderBars(elId,rows){
+ var el=document.getElementById(elId);el.innerHTML='';
+ rows.forEach(function(r){
+  var wrap=document.createElement('div');wrap.style.cssText='margin-bottom:10px;';
+  wrap.innerHTML='<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:4px;"><span>'+r.label+'</span><span style="font-weight:500;color:'+r.color+';">'+r.value+'</span></div>'+
+   '<div style="height:10px;border-radius:999px;background:var(--intensity-6);overflow:hidden;"><div style="height:100%;width:'+clamp(r.frac*100,0,100)+'%;border-radius:999px;background:'+r.color+';transition:width .3s;"></div></div>'+
+   (r.note?'<div style="font-size:11px;color:var(--text-tertiary);margin-top:3px;">'+r.note+'</div>':'');
+  el.appendChild(wrap);
+ });
+}
+
+var running=false,pending=false;
+function runAll(){
+ if(running){pending=true;return;}
+ running=true;
+ var busy=document.getElementById('busy');
+ var btn=document.getElementById('btnResim');btn.disabled=true;
+ function prog(s){busy.textContent=s;}
+ (async function(){
+  try{
+   var inp=getInputs();
+   if(!CUBE){await buildCube(prog);}else{prog('复用既有路径库…');await tick();}
+   var base=await runVariant({w:inp.w,N:1200,years:inp.years,monthly:inp.monthly,fee:inp.fee,infl:inp.infl,on:true,scen:inp.scen,keep:true},prog,'策略模拟');
+   var off=await runVariant({w:inp.w,N:1200,years:inp.years,monthly:inp.monthly,fee:inp.fee,infl:inp.infl,on:false,scen:inp.scen,keep:true},prog,'纯定投对照');
+   var bStop=await runVariant({w:inp.w,N:800,years:inp.years,monthly:inp.monthly,fee:inp.fee,infl:inp.infl,on:true,scen:inp.scen,behav:1,keep:false},prog,'行为失效 1/2');
+   var bPanic=await runVariant({w:inp.w,N:800,years:inp.years,monthly:inp.monthly,fee:inp.fee,infl:inp.infl,on:true,scen:inp.scen,behav:2,keep:false},prog,'行为失效 2/2');
+   var tS=sorted(base.term),N=base.N,Y=base.Y;
+   var p10=pct(tS,.1),p50=pct(tS,.5),p90=pct(tS,.9);
+   var defl=Math.pow(1+inp.infl,Y);
+   document.getElementById('kP10').textContent=fmtW(p10);
+   document.getElementById('kP50').textContent=fmtW(p50);
+   document.getElementById('kP50R').textContent=fmtW(p50/defl);
+   document.getElementById('kP90').textContent=fmtW(p90);
+   var pPrin=0,pInfl=0,pBond=0,i;
+   for(i=0;i<N;i++){if(base.term[i]>base.invA[i])pPrin++;if(base.term[i]>base.invI[i])pInfl++;if(base.term[i]>base.invB[i])pBond++;}
+   renderBars('probBars',[
+    {label:'名义口径：终值 > 累计投入',value:fmtP(pPrin/N),frac:pPrin/N,color:'#F3A04C',note:'最宽松的"保本"定义'},
+    {label:'实际口径：终值 > 投入按通胀复利（实际收益为正）',value:fmtP(pInfl/N),frac:pInfl/N,color:'#00AA90',note:'通胀率 '+(inp.infl*100).toFixed(1)+'% 假设下'},
+    {label:'机会成本口径：终值 > 同现金流买入偏债基金（费后≈3.3%）',value:fmtP(pBond/N),frac:pBond/N,color:'#58B2DC',note:'策略相对无风险替代品的真实胜率'}
+   ]);
+   var mddS=sorted(base.mdd),uwS=sorted(base.uw);
+   document.getElementById('kMdd').textContent=fmtP(pct(mddS,.5));
+   document.getElementById('kMddW').textContent=fmtP(pct(mddS,.1));
+   document.getElementById('kUw').textContent=pct(uwS,.5).toFixed(1)+'年';
+   document.getElementById('kY5').textContent=fmtP(base.below[Math.min(5,Y)]/N);
+   var fanP10=fanPct(base,.1),fanP50=fanPct(base,.5),fanP90=fanPct(base,.9),offP50=fanPct(off,.5);
+   var lo=pct(tS,.01),hi=pct(tS,.99),bins=32,bw=(hi-lo)/bins,hCounts=new Array(bins).fill(0);
+   for(i=0;i<N;i++){var v=base.term[i];var bi=Math.floor((v-lo)/bw);if(bi<0)bi=0;if(bi>=bins)bi=bins-1;hCounts[bi]++;}
+   var hLabels=[],hColors=[];
+   for(i=0;i<bins;i++){var c0=lo+i*bw;hLabels.push(Math.round(c0/10000)+'');var c=c0+bw/2;hColors.push(c<p10?'rgba(230,92,83,.6)':(c>p90?'rgba(64,180,62,.55)':'rgba(243,160,76,.7)'));}
+   var offS=sorted(off.term),offP50v=pct(offS,.5),offP10v=pct(offS,.1);
+   var mult=[],multOff=[];
+   for(i=0;i<N;i++){mult.push(base.term[i]/Math.max(base.invA[i],1));multOff.push(off.term[i]/Math.max(off.invA[i],1));}
+   var medMult=pct(mult.sort(function(a,b){return a-b;}),.5),medMultOff=pct(multOff.sort(function(a,b){return a-b;}),.5);
+   document.getElementById('cmpNote').textContent='财富倍数（终值/累计投入，中位）：策略 '+medMult.toFixed(2)+'× · 纯定投 '+medMultOff.toFixed(2)+'×。两者共享同一组市场路径（公共随机数），差异即策略规则本身的边际贡献：主要体现在 P10 坏结局的抬升与分布形状改善，而非中位数显著提高（规格书 13.3 第四层结论）。弹药池使策略在低估期部署更多资本，绝对终值对比请结合财富倍数解读。';
+   var baseReal=p50/defl;
+   prog('敏感性分析…');
+   async function sensRun(opts){
+    var r=await runVariant({w:inp.w,N:700,years:opts.years||inp.years,monthly:inp.monthly,fee:(opts.fee!==undefined?opts.fee:inp.fee),infl:inp.infl,on:true,scen:0,muShift:opts.muShift||0,volShift:opts.volShift||1,keep:false},nop,'');
+    return pct(sorted(r.term),.5)/Math.pow(1+inp.infl,(opts.years||inp.years));
+   }
+   var muLo=await sensRun({muShift:-0.02}),muHi=await sensRun({muShift:0.02});
+   var voLo=await sensRun({volShift:0.75}),voHi=await sensRun({volShift:1.25});
+   var feLo=await sensRun({fee:Math.max(0,inp.fee-0.005)}),feHi=await sensRun({fee:inp.fee+0.005});
+   var yLo=await sensRun({years:Math.max(7,inp.years-3)}),yHi=await sensRun({years:Math.min(18,inp.years+3)});
+   var inLo=p50/Math.pow(1+Math.max(0.001,inp.infl-0.01),Y),inHi=p50/Math.pow(1+inp.infl+0.01,Y);
+   var tor=[
+    {label:'权益年化 ±2pp',lo:(muLo-baseReal)/10000,hi:(muHi-baseReal)/10000},
+    {label:'波动率 ±25%',lo:(voHi-baseReal)/10000,hi:(voLo-baseReal)/10000},
+    {label:'综合费率 ±0.5pp',lo:(feHi-baseReal)/10000,hi:(feLo-baseReal)/10000},
+    {label:'通胀 ±1pp',lo:(inHi-baseReal)/10000,hi:(inLo-baseReal)/10000},
+    {label:'投资年限 ±3年',lo:(yLo-baseReal)/10000,hi:(yHi-baseReal)/10000}
+   ];
+   tor.sort(function(a,b){return Math.abs(b.hi-b.lo)-Math.abs(a.hi-a.lo);});
+   var medStop=pct(sorted(bStop.term),.5),medPanic=pct(sorted(bPanic.term),.5);
+   var maxT=Math.max(p50,1);
+   renderBars('behavBars',[
+    {label:'纪律执行（基准中位数）',value:fmtW(p50),frac:p50/maxT,color:'#F3A04C'},
+    {label:'熊市中断供 12 个月',value:fmtW(medStop)+'（缺口 '+fmtW(p50-medStop)+'）',frac:medStop/maxT,color:'#EBA400',note:'错过低价筹码积累窗口'},
+    {label:'回撤 -30% 时恐慌赎回、12 个月后回场',value:fmtW(medPanic)+'（缺口 '+fmtW(p50-medPanic)+'）',frac:medPanic/maxT,color:'#E65C53',note:'规格书结论：纪律失效可吞噬 5–8 年复利积累'}
+   ]);
+   prog('渲染图表…');await tick();
+   drawCharts(inp,fanP10,fanP50,fanP90,offP50,hLabels,hCounts,hColors,p50,offP50v,p10,offP10v,tor);
+  }finally{
+   busy.textContent='';btn.disabled=false;running=false;
+   if(pending){pending=false;runAll();}
+  }
+ })();
+}
+
+function drawCharts(inp,fanP10,fanP50,fanP90,offP50,hLabels,hCounts,hColors,p50,offP50v,p10,offP10v,tor){
+ if(!window.Chart)return;
+ var lbs=yLabels(inp.years);
+ function mkScale(yFmt){return {x:{grid:{display:false},ticks:{color:tickC,font:{size:11}}},y:{grid:{color:gridC},ticks:{color:tickC,font:{size:11},callback:yFmt}}};}
+ var baseOpts={responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}}};
+ if(!charts.fan){
+  charts.fan=new Chart(document.getElementById('chFan'),{type:'line',
+   data:{labels:lbs,datasets:[
+    {label:'P10',data:fanP10,borderColor:'rgba(0,0,0,0)',pointRadius:0,fill:false},
+    {label:'P90',data:fanP90,borderColor:'rgba(0,0,0,0)',pointRadius:0,fill:'-1',backgroundColor:'rgba(243,160,76,.15)'},
+    {label:'策略P50',data:fanP50,borderColor:'#F3A04C',borderWidth:2,pointRadius:0,tension:.3},
+    {label:'纯定投P50',data:offP50,borderColor:'#58B2DC',borderWidth:2,pointRadius:0,tension:.3,borderDash:[6,4]}
+   ]},
+   options:Object.assign({},baseOpts,{plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.dataset.label+'：'+fmtW(c.parsed.y);}}}},scales:mkScale(function(v){return fmtW(v);})})});
+ }else{
+  charts.fan.data.labels=lbs;
+  charts.fan.data.datasets[0].data=fanP10;charts.fan.data.datasets[1].data=fanP90;
+  charts.fan.data.datasets[2].data=fanP50;charts.fan.data.datasets[3].data=offP50;
+  charts.fan.update('none');
+ }
+ if(!charts.hist){
+  charts.hist=new Chart(document.getElementById('chHist'),{type:'bar',
+   data:{labels:hLabels,datasets:[{data:hCounts,backgroundColor:hColors,borderRadius:3}]},
+   options:Object.assign({},baseOpts,{plugins:{legend:{display:false},tooltip:{callbacks:{title:function(c){return c[0].label+'万 附近';},label:function(c){return '路径数：'+c.parsed.y;}}}},
+    scales:{x:{grid:{display:false},ticks:{color:tickC,font:{size:10},maxRotation:45,callback:function(v){return this.getLabelForValue(v)+'万';}}},y:{grid:{color:gridC},ticks:{color:tickC,font:{size:11}}}}})});
+ }else{
+  charts.hist.data.labels=hLabels;charts.hist.data.datasets[0].data=hCounts;charts.hist.data.datasets[0].backgroundColor=hColors;charts.hist.update('none');
+ }
+ var cmpData={labels:['终值中位数','P10（坏结局边界）'],datasets:[
+  {label:'策略开启',data:[p50/10000,p10/10000],backgroundColor:'#F3A04C',borderRadius:6},
+  {label:'纯定投',data:[offP50v/10000,offP10v/10000],backgroundColor:'#58B2DC',borderRadius:6}]};
+ if(!charts.cmp){
+  charts.cmp=new Chart(document.getElementById('chCmp'),{type:'bar',data:cmpData,
+   options:Object.assign({},baseOpts,{plugins:{legend:{display:true,labels:{color:tickC,font:{size:11},boxWidth:10}},tooltip:{callbacks:{label:function(c){return c.dataset.label+'：'+c.parsed.y.toFixed(1)+'万';}}}},
+    scales:{x:{grid:{display:false},ticks:{color:tickC,font:{size:11}}},y:{grid:{color:gridC},ticks:{color:tickC,font:{size:11},callback:function(v){return v+'万';}}}}})});
+ }else{charts.cmp.data=cmpData;charts.cmp.update('none');}
+ var torLabels=tor.map(function(d){return d.label;});
+ var torData=tor.map(function(d){return [Math.min(d.lo,d.hi),Math.max(d.lo,d.hi)];});
+ var maxAbs=1;tor.forEach(function(d){maxAbs=Math.max(maxAbs,Math.abs(d.lo),Math.abs(d.hi));});
+ if(!charts.tor){
+  charts.tor=new Chart(document.getElementById('chTor'),{type:'bar',
+   data:{labels:torLabels,datasets:[{data:torData,backgroundColor:'rgba(180,129,187,.75)',borderRadius:5}]},
+   options:Object.assign({},baseOpts,{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){var v=c.raw;return '区间：'+v[0].toFixed(1)+'万 ~ '+v[1].toFixed(1)+'万';}}}},
+    scales:{x:{min:-maxAbs*1.15,max:maxAbs*1.15,grid:{color:gridC},ticks:{color:tickC,font:{size:11},callback:function(v){return v+'万';}}},y:{grid:{display:false},ticks:{color:tickC,font:{size:11}}}}})});
+ }else{
+  charts.tor.data.labels=torLabels;charts.tor.data.datasets[0].data=torData;
+  charts.tor.options.scales.x.min=-maxAbs*1.15;charts.tor.options.scales.x.max=maxAbs*1.15;
+  charts.tor.update('none');
+ }
+}
+
+var ids=['inMonthly','inYears','inFee','inInfl','inW0','inW1','inW2','inW3','inW4'];
+ids.forEach(function(id){
+ var el=document.getElementById(id);
+ el.addEventListener('input',updateLabels);
+ el.addEventListener('change',runAll);
+});
+document.getElementById('inScen').addEventListener('change',runAll);
+document.getElementById('btnResim').addEventListener('click',function(){CUBE=null;runAll();});
+buildChips();
+updateLabels();
+if(window.Chart){runAll();}else{document.getElementById('busy').textContent='图表库加载失败，请刷新。';}
+})();
+</script>
+</body>
+</html>
