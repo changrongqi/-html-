@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>复利 vs 单利：100元本金的十年走势</title>
+</head>
+<body>
+<style>
+:root{
+--primary:#F3A04C;--accent:#E58522;--background:#F4F4F6;--panel-bg:#FEFDFC;--card-bg:#fff;
+--tooltip-bg:#454545;--success:#40B43E;--warning:#EBA400;--destructive:#E65C53;
+--destructive-hover:#D14B42;--primary-foreground:#fff;--text-primary:rgba(0,0,0,.8);
+--text-secondary:rgba(0,0,0,.5);--text-tertiary:rgba(0,0,0,.35);--intensity-0:rgba(0,0,0,0);
+--intensity-3:rgba(0,0,0,.03);--intensity-4:rgba(0,0,0,.04);--intensity-6:rgba(0,0,0,.06);
+--intensity-8:rgba(0,0,0,.08);--intensity-12:rgba(0,0,0,.12);--intensity-16:rgba(0,0,0,.16);
+--intensity-20:rgba(0,0,0,.2);--intensity-35:rgba(0,0,0,.35);--intensity-60:rgba(0,0,0,.6);
+--input-shadow:rgba(0,0,0,.08);--radius-sm:8px;--radius-md:10px;--radius-lg:14px;--radius-xl:18px;
+font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+}
+@media (prefers-color-scheme:dark){
+:root{
+--background:#232324;--panel-bg:#332D28;--card-bg:#2E2E2E;--tooltip-bg:#BABABA;
+--primary-foreground:#000;--text-primary:rgba(255,255,255,.8);--text-secondary:rgba(255,255,255,.5);
+--text-tertiary:rgba(255,255,255,.35);--intensity-0:rgba(255,255,255,0);
+--intensity-3:rgba(255,255,255,.03);--intensity-4:rgba(255,255,255,.04);
+--intensity-6:rgba(255,255,255,.06);--intensity-8:rgba(255,255,255,.08);
+--intensity-12:rgba(255,255,255,.12);--intensity-16:rgba(255,255,255,.16);
+--intensity-20:rgba(255,255,255,.2);--intensity-35:rgba(255,255,255,.35);
+--intensity-60:rgba(255,255,255,.6);--input-shadow:rgba(0,0,0,.28)
+}
+}
+*{box-sizing:border-box;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+</style>
+<div style="display:block;width:100%;color:var(--text-primary);">
+  <div style="font-size:18px;font-weight:600;letter-spacing:.5px;line-height:1.35;margin-bottom:6px;">复利 vs 单利：100元本金的十年走势</div>
+  <div style="font-size:12px;color:var(--text-secondary);line-height:1.6;max-width:660px;margin-bottom:16px;">示意测算：假设每年收益率恒定，复利按当年全部资产计息，单利始终按初始本金100元计息</div>
+  <div id="rateBtns" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+    <button data-r="0.05" style="height:32px;padding:0 16px;border-radius:999px;font-size:12px;font-weight:500;border:.5px solid var(--intensity-12);background:var(--intensity-4);color:var(--text-primary);cursor:pointer;transition:background .2s,color .2s,border-color .2s;">年化5%</button>
+    <button data-r="0.10" style="height:32px;padding:0 16px;border-radius:999px;font-size:12px;font-weight:500;border:.5px solid transparent;background:var(--primary);color:var(--primary-foreground);cursor:pointer;transition:background .2s,color .2s,border-color .2s;">年化10%</button>
+    <button data-r="0.15" style="height:32px;padding:0 16px;border-radius:999px;font-size:12px;font-weight:500;border:.5px solid var(--intensity-12);background:var(--intensity-4);color:var(--text-primary);cursor:pointer;transition:background .2s,color .2s,border-color .2s;">年化15%</button>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:12px;font-size:12px;color:var(--text-secondary);letter-spacing:.2px;">
+    <span style="display:inline-flex;align-items:center;gap:6px;">
+      <span style="width:10px;height:10px;border-radius:3px;background:#F3A04C;"></span>复利（净值滚动）
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:6px;">
+      <span style="width:10px;height:10px;border-radius:3px;background:#58B2DC;"></span>单利（基底恒为100元）
+    </span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;letter-spacing:.3px;margin:16px 0 10px;"><span style="width:3px;height:14px;border-radius:2px;background:var(--primary);"></span>十年资产走势（元）</div>
+  <div style="position:relative;width:100%;height:260px;">
+    <canvas id="chartCompound"></canvas>
+  </div>
+  <div id="resLine" style="font-size:13px;color:var(--text-secondary);margin-top:12px;line-height:1.7;"></div>
+  <div style="font-size:11px;color:var(--text-tertiary);line-height:1.7;margin-top:16px;padding-top:12px;border-top:1px solid var(--intensity-8);">示意测算仅用于理解复利机制，假设收益恒定且不含费用与波动；真实基金净值每日涨跌不定，实际路径会围绕该趋势上下波动。</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(function(){
+  var labels = ['初始','1年','2年','3年','4年','5年','6年','7年','8年','9年','10年'];
+  var chart = null;
+  var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var gridC = isDark ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.08)';
+  var tickC = isDark ? 'rgba(255,255,255,.5)' : 'rgba(0,0,0,.5)';
+  function series(r){
+    var comp = [], simp = [];
+    for(var n=0;n<=10;n++){
+      comp.push(+(100*Math.pow(1+r,n)).toFixed(2));
+      simp.push(+(100*(1+r*n)).toFixed(2));
+    }
+    return {comp:comp, simp:simp};
+  }
+  function render(r){
+    var d = series(r);
+    var res = document.getElementById('resLine');
+    var diff = (d.comp[10]-d.simp[10]).toFixed(2);
+    res.textContent = '年化'+(r*100).toFixed(0)+'%时，第10年末：复利 '+d.comp[10].toFixed(2)+' 元，单利 '+d.simp[10].toFixed(2)+' 元，两者相差 '+diff+' 元。';
+    if(chart){
+      chart.data.datasets[0].data = d.comp;
+      chart.data.datasets[1].data = d.simp;
+      chart.update();
+      return;
+    }
+    chart = new Chart(document.getElementById('chartCompound'),{
+      type:'line',
+      data:{labels:labels,datasets:[
+        {label:'复利',data:d.comp,borderColor:'#F3A04C',backgroundColor:'#F3A04C',borderWidth:2,pointRadius:3,tension:.3},
+        {label:'单利',data:d.simp,borderColor:'#58B2DC',backgroundColor:'#58B2DC',borderWidth:2,pointRadius:3,tension:0,borderDash:[6,4]}
+      ]},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:function(c){return c.dataset.label+'：'+c.parsed.y.toFixed(2)+'元';}}}
+        },
+        scales:{
+          x:{grid:{display:false},ticks:{color:tickC,font:{size:11}}},
+          y:{grid:{color:gridC},ticks:{color:tickC,font:{size:11},callback:function(v){return v+'元';}}}
+        }
+      }
+    });
+  }
+  var btns = document.querySelectorAll('#rateBtns button');
+  btns.forEach(function(b){
+    b.addEventListener('click',function(){
+      btns.forEach(function(x){
+        x.style.background='var(--intensity-4)';
+        x.style.color='var(--text-primary)';
+        x.style.border='.5px solid var(--intensity-12)';
+      });
+      b.style.background='var(--primary)';
+      b.style.color='var(--primary-foreground)';
+      b.style.border='.5px solid transparent';
+      render(parseFloat(b.getAttribute('data-r')));
+    });
+  });
+  if(window.Chart){render(0.10);}
+})();
+</script>
+</body>
+</html>
