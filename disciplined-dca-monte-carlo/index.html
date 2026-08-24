@@ -27,6 +27,22 @@ font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",
 input[type=range]{accent-color:#F3A04C}
 .sec-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:.3px;margin:0 0 8px;color:var(--text-primary)}
 .sec-title::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--primary);flex:none}
+.strat-head{display:flex;align-items:center;gap:10px;width:100%;border:.5px solid var(--intensity-12);border-radius:12px;background:var(--intensity-4);padding:11px 14px;cursor:pointer;text-align:left;transition:background .2s}
+.strat-head:hover{background:var(--intensity-6)}
+.strat-head .mark{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:var(--primary);color:var(--primary-foreground);font-size:13px;font-weight:600;flex:none}
+.strat-head .t1{font-size:13px;font-weight:600;letter-spacing:.3px;color:var(--text-primary)}
+.strat-head .t2{font-size:11px;color:var(--text-secondary);margin-top:1px}
+.strat-head .arrow{margin-left:auto;font-size:12px;color:var(--text-secondary);transition:transform .2s}
+.strat-body{display:none;border:.5px solid var(--intensity-12);border-top:0;border-radius:0 0 12px 12px;background:var(--intensity-4);padding:6px 14px 14px;margin-bottom:16px}
+.strat-body .srow{display:flex;gap:10px;padding:11px 0;border-top:.5px solid var(--intensity-8)}
+.strat-body .srow:first-child{border-top:0}
+.strat-body .snum{font-size:11px;font-weight:600;color:var(--primary);width:22px;flex:none;padding-top:1px}
+.strat-body .stitle{font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:5px;line-height:1.5}
+.strat-body .stext{font-size:12px;color:var(--text-secondary);line-height:1.8}
+.strat-body .stext b{color:var(--text-primary);font-weight:600}
+.strat-body .stext .hl{color:var(--primary);font-weight:600}
+.strat-body .rule{display:inline-flex;align-items:center;gap:6px;margin:5px 8px 0 0;padding:3px 9px;border:.5px solid var(--intensity-12);border-radius:999px;background:var(--intensity-6);font-size:11px;color:var(--text-secondary);line-height:1.6}
+.strat-body .rule b{color:var(--text-primary);font-weight:600}
 </style>
 <div style="display:block;width:100%;color:var(--text-primary);">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
@@ -35,16 +51,87 @@ input[type=range]{accent-color:#F3A04C}
   </div>
   <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:16px;">V2.1：市场路径库一次生成、全部参数复用（公共随机数法，对照更干净），重算分片执行、界面不再冻结。拖动滑块实时刷新读数，松开后约 0.2–0.6 秒完成全量重算。</div>
 
+  <button id="btnStrategy" class="strat-head" aria-expanded="false">
+    <span class="mark">策</span>
+    <span>
+      <div class="t1">我的投资策略 · 九大纪律</div>
+      <div class="t2">资金端 / 资产端 / 估值调额 / 每周执行 / 持有纪律 / 退出 / 再平衡 / 审计 / 信息纪律</div>
+    </span>
+    <span class="arrow" id="stratArrow">▸</span>
+  </button>
+  <div id="strategyBody" class="strat-body">
+
+    <div class="srow"><span class="snum">01</span><div>
+      <div class="stitle">资金端 · 弹药池纪律</div>
+      <div class="stext">设立<b>独立的货币基金弹药池</b>，每月发薪日转入固定金额，作为<b>唯一买基来源</b>；<span class="hl">严禁动用池外资金</span>，<span class="hl">严禁杠杆</span>。</div>
+    </div></div>
+
+    <div class="srow"><span class="snum">02</span><div>
+      <div class="stitle">资产端 · 目标配比（引擎自动归一化）</div>
+      <div class="stext">
+        <span class="rule"><span style="width:8px;height:8px;border-radius:2px;background:#F3A04C;display:inline-block;"></span>宽基指数 <b>40%</b></span>
+        <span class="rule"><span style="width:8px;height:8px;border-radius:2px;background:#E98B2A;display:inline-block;"></span>主动偏股 <b>15%</b></span>
+        <span class="rule"><span style="width:8px;height:8px;border-radius:2px;background:#F17C67;display:inline-block;"></span>科技卫星 <b>≤10%</b></span>
+        <span class="rule"><span style="width:8px;height:8px;border-radius:2px;background:#58B2DC;display:inline-block;"></span>偏债基金 <b>25%</b></span>
+        <span class="rule"><span style="width:8px;height:8px;border-radius:2px;background:#EBA400;display:inline-block;"></span>黄金ETF <b>10%</b></span>
+        <br>主动偏股须通过<b>年度费率审计</b>，未通过则<b>权重归零</b>。
+      </div>
+    </div></div>
+
+    <div class="srow"><span class="snum">03</span><div>
+      <div class="stitle">投入节奏 · 估值驱动动态调额（每月第一个交易日看沪深300市盈率近十年分位）</div>
+      <div class="stext">
+        <span class="rule">分位 &lt;20% → <b>2 倍</b></span>
+        <span class="rule">20%–40% → <b>1.5 倍</b></span>
+        <span class="rule">40%–70% → <b>1 倍（基准）</b></span>
+        <span class="rule">70%–85% → <b>0.5 倍</b></span>
+        <span class="rule">&gt;85% → <b>暂停扣款</b>（绝不赎回）</span>
+        <br><b>科技仓独立判定</b>：按市销率分位 + 52周高点回撤——回撤超40%且PS分位低于30% → 加码 <b>1.5 倍</b>；龙头利润增速<b>连续两季回落</b> → 无条件降一档。
+      </div>
+    </div></div>
+
+    <div class="srow"><span class="snum">04</span><div>
+      <div class="stitle">执行节奏 · 每周定投（周三 14:30）</div>
+      <div class="stext">基准额 = 当月弹药 ÷ <b>4.3</b>；当日基金估值跌幅达 <b>1% 追加1份、2% 追加2份、≥3% 追加3份</b>，每份 = 基准额的 <b>50%</b>；<span class="hl">单只单次投入 ≥500 元</span>。</div>
+    </div></div>
+
+    <div class="srow"><span class="snum">05</span><div>
+      <div class="stitle">持有纪律 · 不因涨跌赎回</div>
+      <div class="stext">仅在<b>三类情形</b>启动替换：<br>① 基金经理变更且风格漂移；② 基金规模一年膨胀 <b>3 倍以上</b>；③ 科技赛道<b>核心技术路线被量产替代</b>。</div>
+    </div></div>
+
+    <div class="srow"><span class="snum">06</span><div>
+      <div class="stitle">退出节奏 · 用钱目标日前</div>
+      <div class="stext">距目标日<b>前两年</b>起，<b>每季将权益仓 10% 移入偏债</b>，逐步降低波动暴露。</div>
+    </div></div>
+
+    <div class="srow"><span class="snum">07</span><div>
+      <div class="stitle">再平衡 · 年度 + 偏离触发</div>
+      <div class="stext">每年 <b>1 月</b>实施再平衡；任一资产偏离目标<b>±10 个百分点</b>随时触发；<span class="hl">优先用新增弹药调节，而非赎回存量</span>。</div>
+    </div></div>
+
+    <div class="srow"><span class="snum">08</span><div>
+      <div class="stitle">年度审计 · 主动基金筛选</div>
+      <div class="stext">每年审计主动基金<b>过去五年是否稳定跑赢费率差</b>；未达标 → <b>替换为指数基金</b>。</div>
+    </div></div>
+
+    <div class="srow"><span class="snum">09</span><div>
+      <div class="stitle">信息纪律 · 行为防线</div>
+      <div class="stext"><b>每周只看一次行情</b>，其余时间不打开软件；<span class="hl">一切临时决策一律视为违规</span>。</div>
+    </div></div>
+
+  </div>
+
   <div style="background:var(--intensity-4);border-radius:14px;padding:14px 16px;margin-bottom:16px;">
     <div style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px;">您确知的参数</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px 20px;">
       <div>
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px;"><span>每月基础弹药</span><span id="vMonthly" style="font-weight:500;color:var(--text-primary);"></span></div>
-        <input id="inMonthly" type="range" min="2000" max="20000" step="500" value="10000" style="width:100%;">
+        <input id="inMonthly" type="range" min="500" max="20000" step="500" value="10000" style="width:100%;">
       </div>
       <div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px;"><span>投资年限（≥10年）</span><span id="vYears" style="font-weight:500;color:var(--text-primary);"></span></div>
-        <input id="inYears" type="range" min="10" max="15" step="1" value="15" style="width:100%;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px;"><span>投资年限（≥1年）</span><span id="vYears" style="font-weight:500;color:var(--text-primary);"></span></div>
+        <input id="inYears" type="range" min="1" max="15" step="1" value="15" style="width:100%;">
       </div>
       <div>
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px;"><span>年综合费率（目标&lt;1%）</span><span id="vFee" style="font-weight:500;color:var(--text-primary);"></span></div>
@@ -458,6 +545,15 @@ ids.forEach(function(id){
 });
 document.getElementById('inScen').addEventListener('change',runAll);
 document.getElementById('btnResim').addEventListener('click',function(){CUBE=null;runAll();});
+(function(){
+ var btn=document.getElementById('btnStrategy'),body=document.getElementById('strategyBody'),arr=document.getElementById('stratArrow');
+ btn.addEventListener('click',function(){
+  var open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  arr.textContent=open?'▸':'▾';
+  btn.setAttribute('aria-expanded',String(!open));
+ });
+})();
 buildChips();
 updateLabels();
 if(window.Chart){runAll();}else{document.getElementById('busy').textContent='图表库加载失败，请刷新。';}
