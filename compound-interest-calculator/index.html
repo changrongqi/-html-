@@ -116,11 +116,11 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px 20px;align-items:flex-end;">
       <div style="display:flex;flex-direction:column;gap:6px;">
         <div class="ctl-label"><span>本金（元）</span></div>
-        <input id="principal" class="num-input" type="number" value="10000" min="0" step="1000">
+        <input id="principal" class="num-input" type="number" value="10000" min="0" max="10000000" step="1000">
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <div class="ctl-label"><span>每月定投金额（元）</span></div>
-        <input id="monthly" class="num-input" type="number" value="0" min="0" step="100">
+        <input id="monthly" class="num-input" type="number" value="0" min="0" max="100000" step="100">
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <div class="ctl-label"><span>年化收益率</span><span class="ctl-val" id="rateOut">5%</span></div>
@@ -276,8 +276,8 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
     return principal+monthly*years*12;
   }
   function render(){
-    var p=Math.max(0,Number(pEl.value)||0);
-    var m=Math.max(0,Number(mEl.value)||0);
+    var p=Math.min(10000000,Math.max(0,Number(pEl.value)||0));
+    var m=Math.min(100000,Math.max(0,Number(mEl.value)||0));
     var r=Math.max(0,Number(rEl.value)/100);
     var n=Math.max(0.5,Number(nEl.value)||0.5);
     rOut.textContent=Number(rEl.value)+'%';
