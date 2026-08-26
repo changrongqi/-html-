@@ -116,11 +116,11 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px 20px;align-items:flex-end;">
       <div style="display:flex;flex-direction:column;gap:6px;">
         <div class="ctl-label"><span>本金（元）</span></div>
-        <input id="principal" class="num-input" type="number" value="10000" min="0" max="10000000" step="1000">
+        <input id="principal" class="num-input" type="number" value="10000" min="0" max="10000000000" step="1000">
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <div class="ctl-label"><span>每月定投金额（元）</span></div>
-        <input id="monthly" class="num-input" type="number" value="0" min="0" max="100000" step="100">
+        <input id="monthly" class="num-input" type="number" value="0" min="0" max="10000000" step="100">
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <div class="ctl-label"><span>年化收益率</span><span class="ctl-val" id="rateOut">5%</span></div>
@@ -277,14 +277,14 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
   }
   function render(){
     var rawP=Number(pEl.value)||0,rawM=Number(mEl.value)||0;
-    var p=Math.min(10000000,Math.max(0,rawP));
-    var m=Math.min(100000,Math.max(0,rawM));
+    var p=Math.min(10000000000,Math.max(0,rawP));
+    var m=Math.min(10000000,Math.max(0,rawM));
     var r=Math.max(0,Number(rEl.value)/100);
     var n=Math.max(0.5,Number(nEl.value)||0.5);
     // 输入框显示层强制夹到上限，避免"输入极大数字、实际计算却被上限截断"的视觉口径不一致
-    if(rawP>10000000){pEl.value=String(10000000);}
+    if(rawP>10000000000){pEl.value=String(10000000000);}
     if(rawP<0){pEl.value=String(0);}
-    if(rawM>100000){mEl.value=String(100000);}
+    if(rawM>10000000){mEl.value=String(10000000);}
     if(rawM<0){mEl.value=String(0);}
     rOut.textContent=Number(rEl.value)+'%';
     nOut.textContent=yr.format(n)+' 年';
