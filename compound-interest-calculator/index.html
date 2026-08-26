@@ -92,18 +92,21 @@ font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",
 }
 *{box-sizing:border-box;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 button,a,[role=button],select,input[type=range]{cursor:pointer}
-.wg{display:block;width:100%;color:var(--text-primary);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:18px 20px 24px;}
-.sec-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:.3px;margin:0 0 10px;color:var(--text-primary)}
-.sec-title::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--primary);flex:none}
-.ctl-label{font-size:12px;color:var(--text-secondary);display:flex;justify-content:space-between;gap:8px;min-width:150px}
-.ctl-val{font-weight:600;color:var(--text-primary)}
-.num-input{height:36px;border:.5px solid var(--intensity-8);border-radius:10px;background:var(--intensity-4);color:var(--text-primary);padding:0 12px;font-size:13px;outline:none;width:130px}
-.num-input:focus{border-color:var(--primary)}
-.range-input{height:36px;accent-color:var(--primary);width:100%}
-.kpi{background:var(--intensity-4);border-radius:10px;padding:14px 16px;min-width:0}
-.kpi-t{font-size:12px;color:var(--text-secondary);margin-bottom:6px}
-.kpi-v{font-size:21px;line-height:1;font-weight:500;color:var(--text-primary);white-space:nowrap;letter-spacing:-.2px;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.kpi-s{font-size:11px;color:var(--text-tertiary);margin-top:6px}
+/* 兼容性说明：老内核（IE/老Edge/老国产内核）不识别 var()，
+   因此对每个使用 var() 的属性先写一遍硬编码兜底值，新内核再用变量覆盖 */
+.wg{display:block;width:100%;color:rgba(0,0,0,.8);color:var(--text-primary);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:18px 20px 24px;}
+.sec-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:.3px;margin:0 0 10px;color:rgba(0,0,0,.8);color:var(--text-primary)}
+.sec-title::before{content:'';width:3px;height:14px;border-radius:2px;background:#F3A04C;background:var(--primary);flex:none}
+.ctl-label{font-size:12px;color:rgba(0,0,0,.5);color:var(--text-secondary);display:flex;justify-content:space-between;gap:8px;min-width:150px}
+.ctl-val{font-weight:600;color:rgba(0,0,0,.8);color:var(--text-primary)}
+.num-input{height:36px;border:.5px solid rgba(0,0,0,.08);border:.5px solid var(--intensity-8);border-radius:10px;background:rgba(0,0,0,.04);background:var(--intensity-4);color:rgba(0,0,0,.8);color:var(--text-primary);padding:0 12px;font-size:13px;outline:none;width:130px}
+.num-input:focus{border-color:#F3A04C;border-color:var(--primary)}
+.range-input{height:36px;accent-color:#F3A04C;accent-color:var(--primary);width:100%}
+.kpi{background:rgba(0,0,0,.04);background:var(--intensity-4);border-radius:10px;padding:14px 16px;min-width:0}
+.kpi-t{font-size:12px;color:rgba(0,0,0,.5);color:var(--text-secondary);margin-bottom:6px}
+.kpi-v{font-size:21px;line-height:1;font-weight:500;color:rgba(0,0,0,.8);color:var(--text-primary);white-space:nowrap;letter-spacing:-.2px;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.kpi-s{font-size:11px;color:rgba(0,0,0,.35);color:var(--text-tertiary);margin-top:6px}
+#chartFallback{display:none;align-items:center;justify-content:center;width:100%;height:100%;font-size:13px;line-height:1.7;text-align:center;padding:16px;color:rgba(0,0,0,.5);color:var(--text-secondary)}
 </style>
 <div class="wg">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
@@ -157,12 +160,12 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
     </div>
     <div class="kpi">
       <div class="kpi-t">银行存款终值（约 1.10%/年）</div>
-      <div class="kpi-v" id="kpiBank" style="color:var(--intensity-60);">¥12,200</div>
+      <div class="kpi-v" id="kpiBank" style="color:rgba(0,0,0,.6);color:var(--intensity-60);">¥12,200</div>
       <div class="kpi-s" id="kpiBankSub">加权平均·单利转存</div>
     </div>
     <div class="kpi">
       <div class="kpi-t">复利比银行存款多赚</div>
-      <div class="kpi-v" id="kpiDiff" style="color:var(--accent);">¥26,497</div>
+      <div class="kpi-v" id="kpiDiff" style="color:#E58522;color:var(--accent);">¥26,497</div>
       <div class="kpi-s" id="kpiDiffSub">滚存效应的增益</div>
     </div>
   </div>
@@ -172,10 +175,11 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
     <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:#F3A04C;"></span>复利（利息滚存）</span>
     <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:#58B2DC;"></span>单利（利息取出）</span>
     <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:rgba(64,180,62,.55);"></span>累计投入本金</span>
-    <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:var(--intensity-35);"></span>银行存款·加权平均约 1.10%</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:rgba(0,0,0,.35);background:var(--intensity-35);"></span>银行存款·加权平均约 1.10%</span>
   </div>
   <div style="position:relative;width:100%;height:300px;">
     <canvas id="growthChart"></canvas>
+    <div id="chartFallback">当前浏览器内核较旧，图表组件（Chart.js 4）无法加载，但上方参数、核心指标的计算完全正常。建议使用新版 Chrome / Edge / Safari 打开本页以查看完整走势图。</div>
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -381,6 +385,13 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
   mEl.addEventListener('input',render);
   rEl.addEventListener('input',render);
   nEl.addEventListener('input',render);
+  // Chart.js 未加载（CDN 失败或浏览器内核过旧）时，隐藏 canvas 并显示友好提示
+  if(!window.Chart){
+    var cEl=document.getElementById('growthChart');
+    if(cEl){cEl.style.display='none';}
+    var fEl=document.getElementById('chartFallback');
+    if(fEl){fEl.style.display='flex';}
+  }
   render();
 })();
 </script>
