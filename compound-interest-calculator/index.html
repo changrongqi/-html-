@@ -1,0 +1,244 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>复利收益计算器</title>
+</head>
+<body>
+<!-- 顶部导航：返回主页 + 项目目录树 -->
+<style>
+.mc-navbar{position:sticky;top:0;z-index:1000;display:flex;align-items:center;gap:10px;padding:8px 14px;background:#17181a;border-bottom:1px solid rgba(255,255,255,.08);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px;color:#f2f2f2;box-shadow:0 1px 8px rgba(0,0,0,.18)}
+.mc-navbar a{color:inherit;text-decoration:none}
+.mc-nav-home{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border:1px solid rgba(255,255,255,.18);border-radius:999px;font-size:12px;transition:background .2s,border-color .2s;white-space:nowrap}
+.mc-nav-home:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.35)}
+.mc-nav-brand{font-weight:600;letter-spacing:.3px;margin-right:auto;white-space:nowrap}
+.mc-nav-holder{position:relative}
+.mc-nav-tree-btn{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border:1px solid rgba(255,255,255,.18);border-radius:999px;background:transparent;color:#f2f2f2;font-size:12px;cursor:pointer;transition:background .2s,border-color .2s;font-family:inherit;line-height:1.4}
+.mc-nav-tree-btn:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.35)}
+.mc-nav-tree{position:absolute;right:0;top:calc(100% + 6px);min-width:240px;max-height:70vh;overflow:auto;background:#1e1f21;border:1px solid rgba(255,255,255,.1);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.35);padding:6px;display:none;z-index:1001}
+.mc-nav-tree.mc-open{display:block}
+.mc-nav-tree .mc-t-tt{font-size:11px;color:rgba(255,255,255,.45);padding:6px 10px 4px;letter-spacing:.2px}
+.mc-nav-tree a{display:block;padding:8px 10px;border-radius:8px;font-size:13px;color:rgba(255,255,255,.82);transition:background .15s;line-height:1.4}
+.mc-nav-tree a:hover{background:rgba(255,255,255,.08)}
+.mc-nav-tree a.mc-cur{color:#F3A04C;font-weight:600}
+.mc-nav-tree a.mc-cur::before{content:'● ';font-size:10px}
+.mc-nav-tree .mc-t-home{margin-top:4px;border-top:1px solid rgba(255,255,255,.08);padding-top:6px;color:rgba(255,255,255,.7)}
+.mc-nav-state{font-size:11px;color:rgba(255,255,255,.45);padding:8px 10px}
+@media (max-width:480px){.mc-nav-brand{display:none}}
+</style>
+<nav class="mc-navbar">
+  <a class="mc-nav-home" href="../">← 主页</a>
+  <span class="mc-nav-brand">我的前端项目集</span>
+  <span class="mc-nav-holder">
+    <button type="button" class="mc-nav-tree-btn" id="mcTreeBtn">项目目录 ▾</button>
+    <div class="mc-nav-tree" id="mcTree"><div class="mc-nav-state">正在加载项目列表…</div></div>
+  </span>
+</nav>
+<script>
+(function(){
+  var CURRENT='compound-interest-calculator';
+  var FALLBACK=['compound-interest-calculator','compound-vs-simple-interest','disciplined-dca-monte-carlo','fund-profit-comparison'];
+  var btn=document.getElementById('mcTreeBtn'),tree=document.getElementById('mcTree');
+  function pretty(n){return n.replace(/[-_]+/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});}
+  function render(folders){
+    var html='<div class="mc-t-tt">全部项目（'+folders.length+'）</div>';
+    folders.forEach(function(f){
+      var cur=(f===CURRENT);
+      html+='<a href="../'+f+'/"'+(cur?' class="mc-cur"':'')+'>'+pretty(f)+(cur?'（当前）':'')+'</a>';
+    });
+    html+='<a class="mc-t-home" href="../">← 返回主页</a>';
+    tree.innerHTML=html;
+  }
+  btn.addEventListener('click',function(e){
+    e.stopPropagation();
+    var open=tree.classList.toggle('mc-open');
+    btn.textContent='项目目录 '+(open?'▴':'▾');
+  });
+  document.addEventListener('click',function(){tree.classList.remove('mc-open');btn.textContent='项目目录 ▾';});
+  if(window.fetch){
+    fetch('https://api.github.com/repos/changrongqi/-html-/contents/')
+      .then(function(r){if(!r.ok)throw 0;return r.json();})
+      .then(function(items){
+        var dirs=items.filter(function(i){return i.type==='dir';}).map(function(i){return i.name;}).sort(function(a,b){return a.localeCompare(b,'zh-CN');});
+        render(dirs);
+      }).catch(function(){render(FALLBACK);});
+  }else{render(FALLBACK);}
+})();
+</script>
+<style>
+:root{
+--primary:#F3A04C;--accent:#E58522;--background:#F4F4F6;--panel-bg:#FEFDFC;--card-bg:#fff;
+--tooltip-bg:#454545;--success:#40B43E;--warning:#EBA400;--destructive:#E65C53;
+--destructive-hover:#D14B42;--primary-foreground:#fff;--text-primary:rgba(0,0,0,.8);
+--text-secondary:rgba(0,0,0,.5);--text-tertiary:rgba(0,0,0,.35);--intensity-0:rgba(0,0,0,0);
+--intensity-3:rgba(0,0,0,.03);--intensity-4:rgba(0,0,0,.04);--intensity-6:rgba(0,0,0,.06);
+--intensity-8:rgba(0,0,0,.08);--intensity-12:rgba(0,0,0,.12);--intensity-16:rgba(0,0,0,.16);
+--intensity-20:rgba(0,0,0,.2);--intensity-35:rgba(0,0,0,.35);--intensity-60:rgba(0,0,0,.6);
+--input-shadow:rgba(0,0,0,.08);--radius-sm:8px;--radius-md:10px;--radius-lg:14px;--radius-xl:18px;
+font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+}
+@media (prefers-color-scheme:dark){
+:root{
+--background:#232324;--panel-bg:#332D28;--card-bg:#2E2E2E;--tooltip-bg:#BABABA;
+--primary-foreground:#000;--text-primary:rgba(255,255,255,.8);--text-secondary:rgba(255,255,255,.5);
+--text-tertiary:rgba(255,255,255,.35);--intensity-0:rgba(255,255,255,0);
+--intensity-3:rgba(255,255,255,.03);--intensity-4:rgba(255,255,255,.04);
+--intensity-6:rgba(255,255,255,.06);--intensity-8:rgba(255,255,255,.08);
+--intensity-12:rgba(255,255,255,.12);--intensity-16:rgba(255,255,255,.16);
+--intensity-20:rgba(255,255,255,.2);--intensity-35:rgba(255,255,255,.35);
+--intensity-60:rgba(255,255,255,.6);--input-shadow:rgba(0,0,0,.28)
+}
+}
+*{box-sizing:border-box;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,a,[role=button],select,input[type=range]{cursor:pointer}
+.wg{display:block;width:100%;color:var(--text-primary);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:18px 20px 24px;}
+.sec-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:.3px;margin:0 0 10px;color:var(--text-primary)}
+.sec-title::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--primary);flex:none}
+.ctl-label{font-size:12px;color:var(--text-secondary);display:flex;justify-content:space-between;gap:8px;min-width:150px}
+.ctl-val{font-weight:600;color:var(--text-primary)}
+.num-input{height:36px;border:.5px solid var(--intensity-8);border-radius:10px;background:var(--intensity-4);color:var(--text-primary);padding:0 12px;font-size:13px;outline:none;width:130px}
+.num-input:focus{border-color:var(--primary)}
+.range-input{height:36px;accent-color:var(--primary);width:100%}
+.kpi{background:var(--intensity-4);border-radius:10px;padding:14px 16px;min-width:0}
+.kpi-t{font-size:12px;color:var(--text-secondary);margin-bottom:6px}
+.kpi-v{font-size:21px;line-height:1;font-weight:500;color:var(--text-primary);white-space:nowrap}
+.kpi-s{font-size:11px;color:var(--text-tertiary);margin-top:6px}
+</style>
+<div class="wg">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
+    <div style="font-size:18px;font-weight:600;letter-spacing:.5px;line-height:1.35;">复利收益计算器</div>
+  </div>
+  <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:18px;">直观感受「利滚利」的滚存效应：调整本金、年化收益率与持有年限，实时对比复利（利息再投入）与单利（利息取出）的终值差异。</div>
+
+  <div class="sec-title">参数设置</div>
+  <div style="background:var(--intensity-4);border-radius:14px;padding:14px 16px;margin-bottom:16px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px 20px;align-items:flex-end;">
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div class="ctl-label"><span>本金（元）</span></div>
+        <input id="principal" class="num-input" type="number" value="10000" min="100" step="1000">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div class="ctl-label"><span>年化收益率</span><span class="ctl-val" id="rateOut">7%</span></div>
+        <input id="rate" class="range-input" type="range" min="0.5" max="12" step="0.5" value="7">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div class="ctl-label"><span>持有年限</span><span class="ctl-val" id="yearsOut">20 年</span></div>
+        <input id="years" class="range-input" type="range" min="1" max="50" step="1" value="20">
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-title">核心指标</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;">
+    <div class="kpi">
+      <div class="kpi-t">期末本息（复利）</div>
+      <div class="kpi-v" id="kpiTotal">¥38,697</div>
+      <div class="kpi-s" id="kpiTotalSub">增值 3.87 倍</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-t">累计收益（复利）</div>
+      <div class="kpi-v" id="kpiGain">¥28,697</div>
+      <div class="kpi-s" id="kpiGainSub">为本金的 287%</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-t">单利总额（对比）</div>
+      <div class="kpi-v" id="kpiSimple">¥24,000</div>
+      <div class="kpi-s">利息不再生息</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-t">复利比单利多赚</div>
+      <div class="kpi-v" id="kpiDiff" style="color:var(--accent);">¥14,697</div>
+      <div class="kpi-s" id="kpiDiffSub">滚存效应的增益</div>
+    </div>
+  </div>
+
+  <div class="sec-title">增长走势对比</div>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:8px;font-size:12px;color:var(--text-secondary);">
+    <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:#F3A04C;"></span>复利（利息滚存）</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:#58B2DC;"></span>单利（利息取出）</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:2px;background:var(--intensity-35);"></span>本金基准</span>
+  </div>
+  <div style="position:relative;width:100%;height:300px;">
+    <canvas id="growthChart"></canvas>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(function(){
+  var fmt=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:0});
+  var compact=new Intl.NumberFormat('zh-CN',{notation:'compact',maximumFractionDigits:1});
+  var pEl=document.getElementById('principal'),
+      rEl=document.getElementById('rate'),
+      nEl=document.getElementById('years'),
+      rOut=document.getElementById('rateOut'),
+      nOut=document.getElementById('yearsOut'),
+      kT=document.getElementById('kpiTotal'),kTs=document.getElementById('kpiTotalSub'),
+      kG=document.getElementById('kpiGain'),kGs=document.getElementById('kpiGainSub'),
+      kS=document.getElementById('kpiSimple'),
+      kD=document.getElementById('kpiDiff'),kDs=document.getElementById('kpiDiffSub');
+  var chart=null;
+  function money(v){return '¥'+fmt.format(Math.round(v));}
+  function render(){
+    var p=Math.max(0,Number(pEl.value)||0);
+    var r=Number(rEl.value)/100;
+    var n=Math.max(1,Number(nEl.value)||1);
+    rOut.textContent=Number(rEl.value)+'%';
+    nOut.textContent=n+' 年';
+    var fv=p*Math.pow(1+r,n);
+    var gain=fv-p;
+    var simple=p*(1+r*n);
+    kT.textContent=p>0?money(fv):'—';
+    kTs.textContent=p>0?('增值 '+(fv/p).toFixed(2)+' 倍'):'—';
+    kG.textContent=p>0?money(gain):'—';
+    kGs.textContent=p>0?('为本金的 '+Math.round(gain/p*100)+'%'):'—';
+    kS.textContent=money(simple);
+    kD.textContent=money(fv-simple);
+    kDs.textContent=n>=10?('约占终值 '+Math.round((fv-simple)/fv*100)+'%'):'滚存效应的增益';
+    if(window.Chart){
+      var labels=[],comp=[],simp=[],base=[];
+      for(var i=0;i<=n;i++){
+        labels.push(String(i));
+        comp.push(Math.round(p*Math.pow(1+r,i)));
+        simp.push(Math.round(p*(1+r*i)));
+        base.push(p);
+      }
+      if(!chart){
+        chart=new Chart(document.getElementById('growthChart'),{
+          type:'line',
+          data:{labels:labels,datasets:[
+            {label:'复利（利息滚存）',data:comp,borderColor:'#F3A04C',backgroundColor:'rgba(243,160,76,.10)',fill:true,tension:.25,pointRadius:0,borderWidth:2},
+            {label:'单利（利息取出）',data:simp,borderColor:'#58B2DC',fill:false,tension:.2,pointRadius:0,borderWidth:2},
+            {label:'本金',data:base,borderColor:'rgba(128,128,128,.45)',borderDash:[4,4],fill:false,pointRadius:0,borderWidth:1}
+          ]},
+          options:{responsive:true,maintainAspectRatio:false,
+            animation:{duration:300},
+            plugins:{legend:{display:false},
+              tooltip:{callbacks:{
+                title:function(items){return '第 '+items[0].label+' 年末';},
+                label:function(c){return ' '+c.dataset.label+'：'+money(c.parsed.y);}
+              }}},
+            scales:{
+              x:{grid:{color:'rgba(128,128,128,.07)'},ticks:{maxRotation:0,autoSkip:true,callback:function(v){return this.getLabelForValue(v)+'年';}}},
+              y:{grid:{color:'rgba(128,128,128,.07)'},ticks:{callback:function(v){return '¥'+compact.format(v);}}}
+            },
+            interaction:{mode:'index',intersect:false}
+          }
+        });
+      }else{
+        chart.data.labels=labels;
+        chart.data.datasets[0].data=comp;
+        chart.data.datasets[1].data=simp;
+        chart.data.datasets[2].data=base;
+        chart.update();
+      }
+    }
+  }
+  pEl.addEventListener('input',render);
+  rEl.addEventListener('input',render);
+  nEl.addEventListener('input',render);
+  render();
+})();
+</script>
+</body>
+</html>
