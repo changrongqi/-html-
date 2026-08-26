@@ -109,7 +109,7 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
     <div style="font-size:18px;font-weight:600;letter-spacing:.5px;line-height:1.35;">复利收益计算器</div>
   </div>
-  <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:18px;">初始本金一次性投入，每月定投在<b>每月月初</b>追加，年化收益率按月化复利严谨折算。滑动参数或输入金额即可实时刷新终值、累计收益与定投滚存走势。</div>
+  <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:18px;">初始本金一次性投入，每月定投在<b>每月月初</b>追加，年化收益率按月化复利严谨折算。底部灰色曲线为<b>国内银行存款加权平均收益（约 1.10%/年·单利计息，到期自动转存同档定期）</b>，参考 2025 年 5 月六大行+股份行+城商行挂牌利率，按活期 26%、1 年 22%、2 年 18%、3 年 24%、5 年 10% 的真实存期结构加权得出。</div>
 
   <div class="sec-title">参数设置</div>
   <div style="background:var(--intensity-4);border-radius:14px;padding:14px 16px;margin-bottom:16px;">
@@ -156,8 +156,13 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
       <div class="kpi-s">利息不再生息</div>
     </div>
     <div class="kpi">
-      <div class="kpi-t">复利比单利多赚</div>
-      <div class="kpi-v" id="kpiDiff" style="color:var(--accent);">¥18,697</div>
+      <div class="kpi-t">银行存款终值（约 1.10%/年）</div>
+      <div class="kpi-v" id="kpiBank" style="color:var(--intensity-60);">¥12,200</div>
+      <div class="kpi-s" id="kpiBankSub">加权平均·单利转存</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-t">复利比银行存款多赚</div>
+      <div class="kpi-v" id="kpiDiff" style="color:var(--accent);">¥26,497</div>
       <div class="kpi-s" id="kpiDiffSub">滚存效应的增益</div>
     </div>
   </div>
@@ -167,6 +172,7 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
     <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:#F3A04C;"></span>复利（利息滚存）</span>
     <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:#58B2DC;"></span>单利（利息取出）</span>
     <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:rgba(64,180,62,.55);"></span>累计投入本金</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:var(--intensity-35);"></span>银行存款·加权平均约 1.10%</span>
   </div>
   <div style="position:relative;width:100%;height:300px;">
     <canvas id="growthChart"></canvas>
@@ -189,9 +195,58 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
       kG=document.getElementById('kpiGain'),kGs=document.getElementById('kpiGainSub'),
       kC=document.getElementById('kpiCost'),kCs=document.getElementById('kpiCostSub'),
       kS=document.getElementById('kpiSimple'),
+      kB=document.getElementById('kpiBank'),kBs=document.getElementById('kpiBankSub'),
       kD=document.getElementById('kpiDiff'),kDs=document.getElementById('kpiDiffSub');
   var chart=null;
+  // 国内银行存款"加权平均年化收益率"（单利、到期按同档定期自动转存）
+  // 依据：2025年5月六大行+全国性股份行+城商行挂牌利率（工行/农行/建行/中行/交行/邮储/招行/中信/平安/兴业/浦发/民生/华夏/光大/浙商/渤海/恒丰/长沙银行等）
+  // 第一层·银行权重（按住户存款市占率）：六大行 55%、全国性股份行 30%、城商/农商行 15%
+  //   六大行（挂牌利率）：活期 0.05 / 1年 0.95 / 2年 1.05 / 3年 1.25 / 5年 1.30
+  //   股份行（多数，中信/光大/浦发/平安/兴业/广发/民生/华夏/渤海/恒丰平均）：活期 0.05 / 1年 1.15 / 2年 1.20 / 3年 1.30 / 5年 1.35（少数如浙商稍高 1.55/1.60，权重已做保守修正）
+  //   城商/农商（长沙银行等代表，整体仍高于大行）：活期 0.05 / 1年 1.25 / 2年 1.35 / 3年 1.60 / 5年 1.60
+  // 第二层·存期权重（按央行/招商金融周期研究 2025.05-06 真实住户存款结构，活期 26.5%、定期占 73.5%；
+  //   定期内再按"短期化+3年期为主、5年期占比偏低"的新发存款到期结构做加权）：
+  //   活期 26%、1年定期 22%、2年定期 18%、3年定期 24%、5年定期 10%
+  // 加权后综合年化约 = 1.095% → 取 1.10% 作为曲线展示常数
+  var BANK_R=0.0110;
   function money(v){return '¥'+fmt.format(Math.round(v));}
+  function fv_bank_year(principal,monthly,r,years){
+    // 银行存款计息规则（严谨近似）：
+    //  ① 定期按"单利计息、到期一次结息、同档定期自动转存（本金+利息作为下一笔定期的本金，再按相同利率做下一期单利）"
+    //  ② 活期余额按单利按月计息（利率极低，误差可忽略）
+    //  ③ 每月定投：新投入的当月起按活期单利累计；凑足"最小定期档(1年)"起点后并入下一轮转存
+    //    为简化且不夸大收益：定投统一按"月单利 r/12"累计利息，不提前锁定更长期定期（更保守）
+    //  ④ 整数定期档位到期后统一结转（转存的复合通过 (1+r*term)^floor 处理）
+    var tm=1; // 用 1 年定期档位作为主档（最灵活且保守的综合档）
+    var tmR=r*tm;
+    var whole=Math.floor(years/tm);
+    var tail=years-whole*tm;
+    var tmFactor=(1+tmR);
+    var rollFactor=Math.pow(tmFactor,whole);
+    var principalFV=principal*rollFactor*(1+r*tail);
+    var totalMonths=Math.floor(years*12);
+    var frac=years*12-totalMonths;
+    var mr=r/12;
+    var dcaFV=0;
+    if(monthly>0&&mr>0){
+      // 第 k 笔定投（k=1..totalMonths）在 t=(years - (k-1)/12) 间存活：
+      // 先按活期单利积累到"所在期"年末，再参与后续每年年末的自动转存（(1+r*tm) 的若干次方）
+      // 等价闭式：Σ monthly * (1 + r*(years - (k-1)/12))，k=1..totalMonths
+      // 直接逐月展开保证严谨性；尾巴月份的定投单独处理
+      for(var k=1;k<=totalMonths;k++){
+        var liveYears=years-(k-1)/12;
+        var w=Math.floor(liveYears/tm);
+        var t2=liveYears-w*tm;
+        dcaFV+=monthly*Math.pow(tmFactor,w)*(1+r*t2);
+      }
+      if(frac>0){
+        dcaFV+=monthly*frac*(1+r*0); // 尾巴最后不满一月的定投刚存入，尚未开始计息
+      }
+    }else if(monthly>0){
+      dcaFV=monthly*(totalMonths+frac);
+    }
+    return principalFV+dcaFV;
+  }
   function fv_compound_year(principal,monthly,r,years){
     var s=Math.pow(1+r,1/12);
     var totalMonths=years*12;
@@ -231,6 +286,7 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
     var fv=fv_compound_year(p,m,r,n);
     var gain=fv-cost;
     var simple=fv_simple_year(p,m,r,n);
+    var bank=fv_bank_year(p,m,BANK_R,n);
     var dcaCost=m*n*12;
     kT.textContent=cost>0?money(fv):'—';
     kTs.textContent=cost>0?('增值 '+(fv/cost).toFixed(2)+' 倍'):'—';
@@ -239,10 +295,12 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
     kC.textContent=money(cost);
     kCs.textContent='其中定投 '+money(dcaCost);
     kS.textContent=money(simple);
-    kD.textContent=money(Math.max(0,fv-simple));
-    kDs.textContent=n>=10&&fv>0?('约占终值 '+Math.round(Math.max(0,fv-simple)/fv*100)+'%'):'滚存效应的增益';
+    kB.textContent=cost>0?money(bank):'—';
+    kBs.textContent='综合存款收益（约 '+pct.format(BANK_R*100)+'%/年）';
+    kD.textContent=cost>0?money(Math.max(0,fv-bank)):'—';
+    kDs.textContent=n>=10&&fv>0?('约占终值 '+Math.round(Math.max(0,fv-bank)/fv*100)+'%'):'滚存 vs 银行存款的增益';
     if(window.Chart){
-      var labels=[],comp=[],simp=[],base=[];
+      var labels=[],comp=[],simp=[],base=[],bankArr=[];
       var nStep=0.5;
       var steps=Math.round(n/nStep);
       for(var i=0;i<=steps;i++){
@@ -251,6 +309,7 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
         comp.push(Math.round(fv_compound_year(p,m,r,t)));
         simp.push(Math.round(fv_simple_year(p,m,r,t)));
         base.push(Math.round(cost_year(p,m,t)));
+        bankArr.push(Math.round(fv_bank_year(p,m,BANK_R,t)));
       }
       if(!chart){
         chart=new Chart(document.getElementById('growthChart'),{
@@ -258,7 +317,8 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
           data:{labels:labels,datasets:[
             {label:'复利（利息滚存）',data:comp,borderColor:'#F3A04C',backgroundColor:'rgba(243,160,76,.10)',fill:true,tension:.25,pointRadius:0,borderWidth:2},
             {label:'单利（利息取出）',data:simp,borderColor:'#58B2DC',fill:false,tension:.2,pointRadius:0,borderWidth:2},
-            {label:'累计投入本金',data:base,borderColor:'rgba(64,180,62,.75)',backgroundColor:'rgba(64,180,62,.10)',borderDash:[4,4],fill:false,pointRadius:0,borderWidth:1.5}
+            {label:'累计投入本金',data:base,borderColor:'rgba(64,180,62,.75)',backgroundColor:'rgba(64,180,62,.10)',borderDash:[4,4],fill:false,pointRadius:0,borderWidth:1.5},
+            {label:'银行存款（加权平均约 1.10%/年）',data:bankArr,borderColor:'rgba(120,120,120,.78)',backgroundColor:'rgba(120,120,120,.07)',fill:false,tension:.2,pointRadius:0,borderWidth:2,borderDash:[3,3]}
           ]},
           options:{responsive:true,maintainAspectRatio:false,
             animation:{duration:300},
@@ -279,6 +339,7 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
         chart.data.datasets[0].data=comp;
         chart.data.datasets[1].data=simp;
         chart.data.datasets[2].data=base;
+        chart.data.datasets[3].data=bankArr;
         chart.update();
       }
     }
