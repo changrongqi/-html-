@@ -102,7 +102,7 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
 .range-input{height:36px;accent-color:var(--primary);width:100%}
 .kpi{background:var(--intensity-4);border-radius:10px;padding:14px 16px;min-width:0}
 .kpi-t{font-size:12px;color:var(--text-secondary);margin-bottom:6px}
-.kpi-v{font-size:21px;line-height:1;font-weight:500;color:var(--text-primary);white-space:nowrap}
+.kpi-v{font-size:21px;line-height:1;font-weight:500;color:var(--text-primary);white-space:nowrap;letter-spacing:-.2px;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .kpi-s{font-size:11px;color:var(--text-tertiary);margin-top:6px}
 </style>
 <div class="wg">
@@ -210,6 +210,33 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
   // 加权后综合年化约 = 1.095% → 取 1.10% 作为曲线展示常数
   var BANK_R=0.0110;
   function money(v){return '¥'+fmt.format(Math.round(v));}
+  var bigFmt=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:2});
+  function moneySmart(v,el){
+    // <1 亿：原样「¥26,532,977」
+    // ≥1 亿 且 <1 万亿：「¥265.33 亿」
+    // ≥1 万亿：「¥2.65 万亿」
+    var a=Math.abs(Math.round(v));
+    if(a<100000000){
+      return money(v);
+    }else if(a<1000000000000){
+      return '¥'+bigFmt.format(v/100000000)+' 亿';
+    }else{
+      return '¥'+bigFmt.format(v/1000000000000)+' 万亿';
+    }
+  }
+  function writeKpi(el,v){
+    if(v==='—'){el.textContent=v;return;}
+    // 策略：先尝试用简短格式（超大金额用亿/万亿压缩）
+    var text=moneySmart(v,el);
+    el.textContent=text;
+    // 若仍溢出（非常极端），降级字号
+    var fs=21;
+    var tries=0;
+    while(tries++<3&&el.scrollWidth-el.clientWidth>1&&fs>14){
+      fs-=2;el.style.fontSize=fs+'px';
+    }
+    if(tries===1){el.style.fontSize='';}// 无需降级，恢复默认字号
+  }
   function fv_bank_year(principal,monthly,r,years){
     // 银行存款计息规则（严谨近似）：
     //  ① 定期按"单利计息、到期一次结息、同档定期自动转存（本金+利息作为下一笔定期的本金，再按相同利率做下一期单利）"
@@ -294,16 +321,16 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
     var simple=fv_simple_year(p,m,r,n);
     var bank=fv_bank_year(p,m,BANK_R,n);
     var dcaCost=m*n*12;
-    kT.textContent=cost>0?money(fv):'—';
+    writeKpi(kT,cost>0?fv:'—');
     kTs.textContent=cost>0?('增值 '+(fv/cost).toFixed(2)+' 倍'):'—';
-    kG.textContent=cost>0?money(gain):'—';
+    writeKpi(kG,cost>0?gain:'—');
     kGs.textContent=cost>0?('为总投入的 '+Math.round(gain/cost*100)+'%'):'—';
-    kC.textContent=money(cost);
-    kCs.textContent='其中定投 '+money(dcaCost);
-    kS.textContent=money(simple);
-    kB.textContent=cost>0?money(bank):'—';
+    writeKpi(kC,cost);
+    kCs.textContent='其中定投 '+moneySmart(dcaCost);
+    writeKpi(kS,simple);
+    writeKpi(kB,cost>0?bank:'—');
     kBs.textContent='综合存款收益（约 '+pct.format(BANK_R*100)+'%/年）';
-    kD.textContent=cost>0?money(Math.max(0,fv-bank)):'—';
+    writeKpi(kD,cost>0?Math.max(0,fv-bank):'—');
     kDs.textContent=n>=10&&fv>0?('约占终值 '+Math.round(Math.max(0,fv-bank)/fv*100)+'%'):'滚存 vs 银行存款的增益';
     if(window.Chart){
       var labels=[],comp=[],simp=[],base=[],bankArr=[];
