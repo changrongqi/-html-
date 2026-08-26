@@ -109,22 +109,26 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
     <div style="font-size:18px;font-weight:600;letter-spacing:.5px;line-height:1.35;">复利收益计算器</div>
   </div>
-  <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:18px;">直观感受「利滚利」的滚存效应：调整本金、年化收益率与持有年限，实时对比复利（利息再投入）与单利（利息取出）的终值差异。</div>
+  <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:18px;">初始本金一次性投入，每月定投在<b>每月月初</b>追加，年化收益率按月化复利严谨折算。滑动参数或输入金额即可实时刷新终值、累计收益与定投滚存走势。</div>
 
   <div class="sec-title">参数设置</div>
   <div style="background:var(--intensity-4);border-radius:14px;padding:14px 16px;margin-bottom:16px;">
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px 20px;align-items:flex-end;">
       <div style="display:flex;flex-direction:column;gap:6px;">
         <div class="ctl-label"><span>本金（元）</span></div>
-        <input id="principal" class="num-input" type="number" value="10000" min="100" step="1000">
+        <input id="principal" class="num-input" type="number" value="10000" min="0" step="1000">
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
-        <div class="ctl-label"><span>年化收益率</span><span class="ctl-val" id="rateOut">7%</span></div>
-        <input id="rate" class="range-input" type="range" min="0.5" max="100" step="0.5" value="7">
+        <div class="ctl-label"><span>每月定投金额（元）</span></div>
+        <input id="monthly" class="num-input" type="number" value="0" min="0" step="100">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div class="ctl-label"><span>年化收益率</span><span class="ctl-val" id="rateOut">5%</span></div>
+        <input id="rate" class="range-input" type="range" min="0.5" max="30" step="0.5" value="5">
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <div class="ctl-label"><span>持有年限</span><span class="ctl-val" id="yearsOut">20 年</span></div>
-        <input id="years" class="range-input" type="range" min="1" max="50" step="1" value="20">
+        <input id="years" class="range-input" type="range" min="0.5" max="50" step="0.5" value="20">
       </div>
     </div>
   </div>
@@ -139,16 +143,21 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
     <div class="kpi">
       <div class="kpi-t">累计收益（复利）</div>
       <div class="kpi-v" id="kpiGain">¥28,697</div>
-      <div class="kpi-s" id="kpiGainSub">为本金的 287%</div>
+      <div class="kpi-s" id="kpiGainSub">为总投入的 287%</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-t">总投入本金</div>
+      <div class="kpi-v" id="kpiCost">¥10,000</div>
+      <div class="kpi-s" id="kpiCostSub">其中定投 ¥0</div>
     </div>
     <div class="kpi">
       <div class="kpi-t">单利总额（对比）</div>
-      <div class="kpi-v" id="kpiSimple">¥24,000</div>
+      <div class="kpi-v" id="kpiSimple">¥20,000</div>
       <div class="kpi-s">利息不再生息</div>
     </div>
     <div class="kpi">
       <div class="kpi-t">复利比单利多赚</div>
-      <div class="kpi-v" id="kpiDiff" style="color:var(--accent);">¥14,697</div>
+      <div class="kpi-v" id="kpiDiff" style="color:var(--accent);">¥18,697</div>
       <div class="kpi-s" id="kpiDiffSub">滚存效应的增益</div>
     </div>
   </div>
@@ -157,7 +166,7 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
   <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:8px;font-size:12px;color:var(--text-secondary);">
     <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:#F3A04C;"></span>复利（利息滚存）</span>
     <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:#58B2DC;"></span>单利（利息取出）</span>
-    <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:2px;background:var(--intensity-35);"></span>本金基准</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:rgba(64,180,62,.55);"></span>累计投入本金</span>
   </div>
   <div style="position:relative;width:100%;height:300px;">
     <canvas id="growthChart"></canvas>
@@ -167,41 +176,81 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
 <script>
 (function(){
   var fmt=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:0});
+  var pct=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:1});
+  var yr=new Intl.NumberFormat('zh-CN',{maximumFractionDigits:1,minimumFractionDigits:0});
   var compact=new Intl.NumberFormat('zh-CN',{notation:'compact',maximumFractionDigits:1});
   var pEl=document.getElementById('principal'),
+      mEl=document.getElementById('monthly'),
       rEl=document.getElementById('rate'),
       nEl=document.getElementById('years'),
       rOut=document.getElementById('rateOut'),
       nOut=document.getElementById('yearsOut'),
       kT=document.getElementById('kpiTotal'),kTs=document.getElementById('kpiTotalSub'),
       kG=document.getElementById('kpiGain'),kGs=document.getElementById('kpiGainSub'),
+      kC=document.getElementById('kpiCost'),kCs=document.getElementById('kpiCostSub'),
       kS=document.getElementById('kpiSimple'),
       kD=document.getElementById('kpiDiff'),kDs=document.getElementById('kpiDiffSub');
   var chart=null;
   function money(v){return '¥'+fmt.format(Math.round(v));}
+  function fv_compound_year(principal,monthly,r,years){
+    var s=Math.pow(1+r,1/12);
+    var totalMonths=years*12;
+    var principalFV=principal*Math.pow(1+r,years);
+    var dcaFV=0;
+    if(monthly>0&&s>1){
+      dcaFV=monthly*s*((Math.pow(s,totalMonths)-1)/(s-1));
+    }else if(monthly>0){
+      dcaFV=monthly*totalMonths;
+    }
+    return principalFV+dcaFV;
+  }
+  function fv_simple_year(principal,monthly,r,years){
+    var totalMonths=Math.floor(years*12);
+    var frac=years*12-totalMonths;
+    var mr=r/12;
+    var principalInterest=principal*r*years;
+    var dcaInterest=0;
+    if(monthly>0&&mr>0){
+      var sumN=totalMonths*(totalMonths+1)/2;
+      dcaInterest=monthly*mr*sumN;
+      dcaInterest+=monthly*mr*frac*(totalMonths+1);
+    }
+    return principal+monthly*(totalMonths+frac)+principalInterest+dcaInterest;
+  }
+  function cost_year(principal,monthly,years){
+    return principal+monthly*years*12;
+  }
   function render(){
     var p=Math.max(0,Number(pEl.value)||0);
-    var r=Number(rEl.value)/100;
-    var n=Math.max(1,Number(nEl.value)||1);
+    var m=Math.max(0,Number(mEl.value)||0);
+    var r=Math.max(0,Number(rEl.value)/100);
+    var n=Math.max(0.5,Number(nEl.value)||0.5);
     rOut.textContent=Number(rEl.value)+'%';
-    nOut.textContent=n+' 年';
-    var fv=p*Math.pow(1+r,n);
-    var gain=fv-p;
-    var simple=p*(1+r*n);
-    kT.textContent=p>0?money(fv):'—';
-    kTs.textContent=p>0?('增值 '+(fv/p).toFixed(2)+' 倍'):'—';
-    kG.textContent=p>0?money(gain):'—';
-    kGs.textContent=p>0?('为本金的 '+Math.round(gain/p*100)+'%'):'—';
+    nOut.textContent=yr.format(n)+' 年';
+    var cost=cost_year(p,m,n);
+    var fv=fv_compound_year(p,m,r,n);
+    var gain=fv-cost;
+    var simple=fv_simple_year(p,m,r,n);
+    var dcaCost=m*n*12;
+    kT.textContent=cost>0?money(fv):'—';
+    kTs.textContent=cost>0?('增值 '+(fv/cost).toFixed(2)+' 倍'):'—';
+    kG.textContent=cost>0?money(gain):'—';
+    kGs.textContent=cost>0?('为总投入的 '+Math.round(gain/cost*100)+'%'):'—';
+    kC.textContent=money(cost);
+    kCs.textContent='其中定投 '+money(dcaCost);
     kS.textContent=money(simple);
-    kD.textContent=money(fv-simple);
-    kDs.textContent=n>=10?('约占终值 '+Math.round((fv-simple)/fv*100)+'%'):'滚存效应的增益';
+    kD.textContent=money(Math.max(0,fv-simple));
+    kDs.textContent=n>=10&&fv>0?('约占终值 '+Math.round(Math.max(0,fv-simple)/fv*100)+'%'):'滚存效应的增益';
     if(window.Chart){
       var labels=[],comp=[],simp=[],base=[];
-      for(var i=0;i<=n;i++){
-        labels.push(String(i));
-        comp.push(Math.round(p*Math.pow(1+r,i)));
-        simp.push(Math.round(p*(1+r*i)));
-        base.push(p);
+      var nStep=0.5;
+      var steps=Math.round(n/nStep);
+      for(var i=0;i<=steps;i++){
+        var t=i*nStep;
+        labels.push(yr.format(t));
+        comp.push(Math.round(fv_compound_year(p,m,r,t)));
+        simp.push(Math.round(fv_simple_year(p,m,r,t)));
+        base.push(Math.round(cost_year(p,m,t)));
       }
       if(!chart){
         chart=new Chart(document.getElementById('growthChart'),{
@@ -209,7 +258,7 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
           data:{labels:labels,datasets:[
             {label:'复利（利息滚存）',data:comp,borderColor:'#F3A04C',backgroundColor:'rgba(243,160,76,.10)',fill:true,tension:.25,pointRadius:0,borderWidth:2},
             {label:'单利（利息取出）',data:simp,borderColor:'#58B2DC',fill:false,tension:.2,pointRadius:0,borderWidth:2},
-            {label:'本金',data:base,borderColor:'rgba(128,128,128,.45)',borderDash:[4,4],fill:false,pointRadius:0,borderWidth:1}
+            {label:'累计投入本金',data:base,borderColor:'rgba(64,180,62,.75)',backgroundColor:'rgba(64,180,62,.10)',borderDash:[4,4],fill:false,pointRadius:0,borderWidth:1.5}
           ]},
           options:{responsive:true,maintainAspectRatio:false,
             animation:{duration:300},
@@ -235,6 +284,7 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
     }
   }
   pEl.addEventListener('input',render);
+  mEl.addEventListener('input',render);
   rEl.addEventListener('input',render);
   nEl.addEventListener('input',render);
   render();
