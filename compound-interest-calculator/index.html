@@ -276,10 +276,16 @@ button,a,[role=button],select,input[type=range]{cursor:pointer}
     return principal+monthly*years*12;
   }
   function render(){
-    var p=Math.min(10000000,Math.max(0,Number(pEl.value)||0));
-    var m=Math.min(100000,Math.max(0,Number(mEl.value)||0));
+    var rawP=Number(pEl.value)||0,rawM=Number(mEl.value)||0;
+    var p=Math.min(10000000,Math.max(0,rawP));
+    var m=Math.min(100000,Math.max(0,rawM));
     var r=Math.max(0,Number(rEl.value)/100);
     var n=Math.max(0.5,Number(nEl.value)||0.5);
+    // 输入框显示层强制夹到上限，避免"输入极大数字、实际计算却被上限截断"的视觉口径不一致
+    if(rawP>10000000){pEl.value=String(10000000);}
+    if(rawP<0){pEl.value=String(0);}
+    if(rawM>100000){mEl.value=String(100000);}
+    if(rawM<0){mEl.value=String(0);}
     rOut.textContent=Number(rEl.value)+'%';
     nOut.textContent=yr.format(n)+' 年';
     var cost=cost_year(p,m,n);
